@@ -133,6 +133,11 @@ export default function ShopOrdersPage() {
                         <Typography variant="body2" sx={{ fontWeight: 600, fontFamily: "monospace" }}>
                           {o.orderNo}
                         </Typography>
+                        {o.items.map((item) => (
+                          <Typography key={item.id} variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                            {item.product.name} × {item.quantity}
+                          </Typography>
+                        ))}
                       </TableCell>
                       <TableCell>
                         <Typography variant="body2">{o.factory.name}</Typography>
