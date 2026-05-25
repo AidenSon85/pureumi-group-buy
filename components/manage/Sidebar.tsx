@@ -1,8 +1,9 @@
 "use client";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useTheme, useMediaQuery } from "@mui/material";
 import {
-  Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText,
+  Drawer, List, ListItemButton, ListItemIcon, ListItemText,
   Toolbar, Divider, Collapse, Box, Typography, Avatar, IconButton, Tooltip,
 } from "@mui/material";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -62,10 +63,17 @@ const navItems: NavItem[] = [
   },
 ];
 
-export default function Sidebar() {
+interface Props {
+  mobileOpen: boolean;
+  onMobileClose: () => void;
+}
+
+export default function Sidebar({ mobileOpen, onMobileClose }: Props) {
   const { data: session } = useSession();
   const pathname = usePathname();
   const router = useRouter();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [collapsed, setCollapsed] = useState(false);
 
@@ -78,32 +86,23 @@ export default function Sidebar() {
   const isActive = (href: string) =>
     href === "/manage" ? pathname === href : pathname.startsWith(href);
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: drawerWidth,
-        flexShrink: 0,
-        "& .MuiDrawer-paper": {
-          width: drawerWidth,
-          boxSizing: "border-box",
-          background: "#1a237e",
-          color: "#fff",
-          transition: "width 0.2s",
-          overflowX: "hidden",
-        },
-      }}
-    >
+  const handleNav = (href: string) => {
+    router.push(href);
+    if (isMobile) onMobileClose();
+  };
+
+  const drawerContent = (
+    <>
       <Toolbar
         sx={{
           display: "flex",
           alignItems: "center",
-          justifyContent: collapsed ? "center" : "space-between",
-          px: collapsed ? 1 : 2,
+          justifyContent: collapsed && !isMobile ? "center" : "space-between",
+          px: collapsed && !isMobile ? 1 : 2,
           minHeight: "64px !important",
         }}
       >
-        {!collapsed && (
+        {(!collapsed || isMobile) && (
           <Box>
             <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#fff" }}>
               PUREUMI
@@ -113,14 +112,16 @@ export default function Sidebar() {
             </Typography>
           </Box>
         )}
-        <IconButton onClick={() => setCollapsed(!collapsed)} sx={{ color: "#fff" }}>
-          {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
-        </IconButton>
+        {!isMobile && (
+          <IconButton onClick={() => setCollapsed(!collapsed)} sx={{ color: "#fff" }}>
+            {collapsed ? <ChevronRightIcon /> : <ChevronLeftIcon />}
+          </IconButton>
+        )}
       </Toolbar>
 
       <Divider sx={{ borderColor: "rgba(255,255,255,0.15)" }} />
 
-      {!collapsed && session?.user && (
+      {(!collapsed || isMobile) && session?.user && (
         <Box sx={{ px: 2, py: 1.5, display: "flex", alignItems: "center", gap: 1.5 }}>
           <Avatar sx={{ width: 32, height: 32, bgcolor: "#3f51b5", fontSize: 14 }}>
             {session.user.name?.[0]}
@@ -143,14 +144,15 @@ export default function Sidebar() {
           if (item.children) {
             const expanded = open[item.title];
             const isParentActive = item.children.some((c) => isActive(c.href));
+            const showCollapsed = collapsed && !isMobile;
             return (
               <div key={item.title}>
-                <Tooltip title={collapsed ? item.title : ""} placement="right">
+                <Tooltip title={showCollapsed ? item.title : ""} placement="right">
                   <ListItemButton
-                    onClick={() => !collapsed && toggleMenu(item.title)}
+                    onClick={() => !showCollapsed && toggleMenu(item.title)}
                     sx={{
-                      px: collapsed ? 2.5 : 2,
-                      justifyContent: collapsed ? "center" : "flex-start",
+                      px: showCollapsed ? 2.5 : 2,
+                      justifyContent: showCollapsed ? "center" : "flex-start",
                       color: isParentActive ? "#90caf9" : "rgba(255,255,255,0.85)",
                       "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
                     }}
@@ -158,13 +160,13 @@ export default function Sidebar() {
                     <ListItemIcon
                       sx={{
                         color: "inherit",
-                        minWidth: collapsed ? 0 : 40,
+                        minWidth: showCollapsed ? 0 : 40,
                         justifyContent: "center",
                       }}
                     >
                       {item.icon}
                     </ListItemIcon>
-                    {!collapsed && (
+                    {!showCollapsed && (
                       <>
                         <ListItemText primary={item.title} slotProps={{ primary: { style: { fontSize: 14 } } }} />
                         {expanded ? <ExpandLess /> : <ExpandMore />}
@@ -172,14 +174,14 @@ export default function Sidebar() {
                     )}
                   </ListItemButton>
                 </Tooltip>
-                {!collapsed && (
+                {!showCollapsed && (
                   <Collapse in={expanded} timeout="auto">
                     <List disablePadding>
                       {item.children.map((child) => (
                         <ListItemButton
                           key={child.href}
                           selected={isActive(child.href)}
-                          onClick={() => router.push(child.href)}
+                          onClick={() => handleNav(child.href)}
                           sx={{
                             pl: 4,
                             color: isActive(child.href) ? "#90caf9" : "rgba(255,255,255,0.7)",
@@ -202,14 +204,16 @@ export default function Sidebar() {
               </div>
             );
           }
+
+          const showCollapsed = collapsed && !isMobile;
           return (
-            <Tooltip key={item.title} title={collapsed ? item.title : ""} placement="right">
+            <Tooltip key={item.title} title={showCollapsed ? item.title : ""} placement="right">
               <ListItemButton
                 selected={isActive(item.href!)}
-                onClick={() => router.push(item.href!)}
+                onClick={() => handleNav(item.href!)}
                 sx={{
-                  px: collapsed ? 2.5 : 2,
-                  justifyContent: collapsed ? "center" : "flex-start",
+                  px: showCollapsed ? 2.5 : 2,
+                  justifyContent: showCollapsed ? "center" : "flex-start",
                   color: isActive(item.href!) ? "#90caf9" : "rgba(255,255,255,0.85)",
                   "&.Mui-selected": {
                     bgcolor: "rgba(144,202,249,0.15)",
@@ -221,13 +225,13 @@ export default function Sidebar() {
                 <ListItemIcon
                   sx={{
                     color: "inherit",
-                    minWidth: collapsed ? 0 : 40,
+                    minWidth: showCollapsed ? 0 : 40,
                     justifyContent: "center",
                   }}
                 >
                   {item.icon}
                 </ListItemIcon>
-                {!collapsed && (
+                {!showCollapsed && (
                   <ListItemText primary={item.title} slotProps={{ primary: { style: { fontSize: 14 } } }} />
                 )}
               </ListItemButton>
@@ -235,6 +239,47 @@ export default function Sidebar() {
           );
         })}
       </List>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onMobileClose}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          "& .MuiDrawer-paper": {
+            width: DRAWER_WIDTH,
+            boxSizing: "border-box",
+            background: "#1a237e",
+            color: "#fff",
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+    );
+  }
+
+  return (
+    <Drawer
+      variant="permanent"
+      sx={{
+        width: drawerWidth,
+        flexShrink: 0,
+        "& .MuiDrawer-paper": {
+          width: drawerWidth,
+          boxSizing: "border-box",
+          background: "#1a237e",
+          color: "#fff",
+          transition: "width 0.2s",
+          overflowX: "hidden",
+        },
+      }}
+    >
+      {drawerContent}
     </Drawer>
   );
 }

@@ -5,10 +5,15 @@ import {
 } from "@mui/material";
 import LogoutIcon from "@mui/icons-material/Logout";
 import NotificationsIcon from "@mui/icons-material/Notifications";
+import MenuIcon from "@mui/icons-material/Menu";
 import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 
-export default function Header() {
+interface Props {
+  onMenuClick: () => void;
+}
+
+export default function Header({ onMenuClick }: Props) {
   const { data: session } = useSession();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -20,14 +25,21 @@ export default function Header() {
         zIndex: (theme) => theme.zIndex.drawer + 1,
         bgcolor: "#fff",
         borderBottom: "1px solid #e0e0e0",
-        ml: "auto",
         width: "100%",
       }}
     >
       <Toolbar sx={{ justifyContent: "space-between" }}>
-        <Typography variant="h6" sx={{ color: "text.primary", fontWeight: 700 }}>
-          PUREUMI 관리자
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <IconButton
+            onClick={onMenuClick}
+            sx={{ display: { xs: "flex", md: "none" }, color: "text.primary" }}
+          >
+            <MenuIcon />
+          </IconButton>
+          <Typography variant="h6" sx={{ color: "text.primary", fontWeight: 700 }}>
+            PUREUMI 관리자
+          </Typography>
+        </Box>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <IconButton size="small">
             <NotificationsIcon sx={{ color: "#666" }} />
