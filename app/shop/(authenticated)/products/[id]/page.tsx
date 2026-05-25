@@ -152,7 +152,10 @@ export default function ProductDetailPage() {
       if (res.ok) {
         await fetch(`/api/products/${id}/comments?commentId=${comment.id}`, { method: "DELETE" });
         setComments((prev) => prev.filter((c) => c.id !== comment.id));
-        setPendingOrderId(null);
+        // 남은 대기 주문 재조회
+        fetch(`/api/shop/orders/pending?productId=${id}`).then((r) => r.json()).then((o) => {
+          setPendingOrderId(o?.id || null);
+        });
         setSnack({ open: true, msg: "주문이 취소되었습니다", severity: "success" });
       } else {
         const d = await res.json();
