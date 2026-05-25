@@ -86,9 +86,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const displayPrice = product.salePrice ?? product.price;
 
   return (
-    <Box sx={{ pb: { xs: 10, md: 4 } }}>
+    <Box sx={{ pb: { xs: 10, md: 4 }, maxWidth: 860, mx: "auto" }}>
       {/* 상단 네비 */}
-      <Stack direction="row" sx={{ alignItems: "center", mb: 2, gap: 1 }}>
+      <Stack direction="row" sx={{ alignItems: "center", mb: 1.5, gap: 1 }}>
         <IconButton onClick={() => router.back()} size="small">
           <ArrowBackIcon />
         </IconButton>
@@ -98,9 +98,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </Typography>
       </Stack>
 
-      <Grid container spacing={{ xs: 0, md: 4 }}>
+      <Grid container spacing={{ xs: 0, md: 3 }}>
         {/* ── 이미지 섹션 ── */}
-        <Grid size={{ xs: 12, md: 5 }}>
+        <Grid size={{ xs: 12, md: 4 }}>
           {/* 메인 이미지 */}
           <Box sx={{ position: "relative", bgcolor: "#f8f8f8", borderRadius: { xs: 0, md: 2 }, overflow: "hidden", border: { md: "1px solid #e0e0e0" } }}>
             <Box sx={{ width: "100%", aspectRatio: "1", display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -162,7 +162,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </Grid>
 
         {/* ── 제품 정보 섹션 ── */}
-        <Grid size={{ xs: 12, md: 7 }}>
+        <Grid size={{ xs: 12, md: 8 }}>
           <Box sx={{ px: { xs: 2, md: 0 }, pt: { xs: 2, md: 0 } }}>
             {/* 판매 상태 */}
             <Chip
@@ -173,31 +173,31 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             />
 
             {/* 제품명 */}
-            <Typography variant="h5" sx={{ fontWeight: 700, lineHeight: 1.4, mb: 2, wordBreak: "keep-all" }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.4, mb: 1.5, wordBreak: "keep-all" }}>
               {product.name}
             </Typography>
 
             <Divider sx={{ mb: 2 }} />
 
             {/* 가격 블록 */}
-            <Box sx={{ mb: 2.5, p: 2, bgcolor: "#f8f9ff", borderRadius: 2 }}>
+            <Box sx={{ mb: 2, p: 1.5, bgcolor: "#f8f9ff", borderRadius: 2 }}>
               {product.salePrice ? (
                 <>
-                  <Stack direction="row" sx={{ alignItems: "center", gap: 1.5, mb: 0.5 }}>
-                    <Typography variant="h4" sx={{ fontWeight: 800, color: "#e53935" }}>
+                  <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.5 }}>
+                    <Typography sx={{ fontWeight: 800, color: "#e53935", fontSize: { xs: 22, md: 20 } }}>
                       {formatWon(product.salePrice)}
                     </Typography>
-                    <Chip label={`${discountRate}%`} size="small" sx={{ bgcolor: "#e53935", color: "#fff", fontWeight: 700, fontSize: 13 }} />
+                    <Chip label={`${discountRate}%`} size="small" sx={{ bgcolor: "#e53935", color: "#fff", fontWeight: 700, fontSize: 12 }} />
                   </Stack>
-                  <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
-                    <Typography variant="body2" sx={{ color: "text.secondary" }}>정가</Typography>
-                    <Typography variant="body2" sx={{ color: "text.secondary", textDecoration: "line-through" }}>
+                  <Stack direction="row" sx={{ alignItems: "center", gap: 0.75 }}>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>정가</Typography>
+                    <Typography variant="caption" sx={{ color: "text.secondary", textDecoration: "line-through" }}>
                       {formatWon(product.price)}
                     </Typography>
                   </Stack>
                 </>
               ) : (
-                <Typography variant="h4" sx={{ fontWeight: 800, color: "#1a237e" }}>
+                <Typography sx={{ fontWeight: 800, color: "#1a237e", fontSize: { xs: 22, md: 20 } }}>
                   {formatWon(product.price)}
                 </Typography>
               )}
@@ -254,7 +254,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       </Grid>
 
       {/* ── 탭 콘텐츠 ── */}
-      <Box sx={{ mt: { xs: 3, md: 4 } }}>
+      <Box sx={{ mt: { xs: 2.5, md: 3 } }}>
         <Paper elevation={0} sx={{ border: "1px solid #e0e0e0", borderRadius: 2, overflow: "hidden" }}>
           <Tabs
             value={tab} onChange={(_, v) => setTab(v)}
