@@ -21,6 +21,9 @@ import ImageIcon from "@mui/icons-material/Image";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import ViewListIcon from "@mui/icons-material/ViewList";
+import GridViewIcon from "@mui/icons-material/GridView";
+import { Card, CardContent, CardMedia } from "@mui/material";
 
 interface Factory { id: string; name: string }
 interface Category { id: string; name: string }
@@ -64,6 +67,7 @@ export default function ProductsPage() {
   const [uploadError, setUploadError] = useState("");
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
@@ -212,7 +216,23 @@ export default function ProductsPage() {
               <InventoryIcon color="primary" />
               <Typography variant="h5" sx={{ fontWeight: 700 }}>제품(PRODUCT) 관리</Typography>
             </Box>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>제품 등록</Button>
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <Box sx={{ display: "flex", border: "1px solid #e0e0e0", borderRadius: 1, overflow: "hidden" }}>
+                <Tooltip title="목록 보기">
+                  <IconButton size="small" onClick={() => setViewMode("list")}
+                    sx={{ borderRadius: 0, bgcolor: viewMode === "list" ? "#1a237e" : "transparent", color: viewMode === "list" ? "#fff" : "text.secondary", "&:hover": { bgcolor: viewMode === "list" ? "#1a237e" : "#f5f5f5" } }}>
+                    <ViewListIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                <Tooltip title="카드 보기">
+                  <IconButton size="small" onClick={() => setViewMode("grid")}
+                    sx={{ borderRadius: 0, bgcolor: viewMode === "grid" ? "#1a237e" : "transparent", color: viewMode === "grid" ? "#fff" : "text.secondary", "&:hover": { bgcolor: viewMode === "grid" ? "#1a237e" : "#f5f5f5" } }}>
+                    <GridViewIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>제품 등록</Button>
+            </Stack>
           </Stack>
 
           <Paper elevation={0} sx={{ p: 2, mb: 2, border: "1px solid #e0e0e0" }}>
@@ -233,81 +253,160 @@ export default function ProductsPage() {
             </Stack>
           </Paper>
 
-          <Paper elevation={0} sx={{ border: "1px solid #e0e0e0" }}>
-            <TableContainer>
-              <Table>
-                <TableHead>
-                  <TableRow sx={{ "& th": { fontWeight: 700, bgcolor: "#f5f5f5" } }}>
-                    <TableCell>제품명</TableCell>
-                    <TableCell>매장</TableCell>
-                    <TableCell>공구일</TableCell>
-                    <TableCell align="right">가격</TableCell>
-                    <TableCell align="center">상태</TableCell>
-                    <TableCell align="center">관리</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {loading ? (
-                    <TableRow><TableCell colSpan={6} align="center" sx={{ py: 6 }}><CircularProgress /></TableCell></TableRow>
-                  ) : products.length === 0 ? (
-                    <TableRow><TableCell colSpan={6} align="center" sx={{ py: 6, color: "text.secondary" }}>등록된 제품이 없습니다</TableCell></TableRow>
-                  ) : products.map((p) => (
-                    <TableRow key={p.id} hover selected={editTarget?.id === p.id}
-                      sx={{ "&.Mui-selected": { bgcolor: "#e3f2fd" } }}>
-                      <TableCell>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                          <Avatar src={p.imageUrl || undefined} variant="rounded" sx={{ width: 40, height: 40, bgcolor: "#f5f5f5" }}>
-                            <ImageIcon color="disabled" />
-                          </Avatar>
-                          <Box>
-                            <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.name}</Typography>
-                            {p.category && <Typography variant="caption" sx={{ color: "text.secondary" }}>{p.category.name}</Typography>}
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                          {getFactoryNames(p).map((name, i) => (
-                            <Chip key={i} label={name} size="small" variant="outlined" sx={{ height: 20, fontSize: 11 }} />
-                          ))}
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        {p.groupBuyStartAt ? (
-                          <Typography variant="caption" sx={{ color: "primary.main" }}>
-                            {formatDateShort(p.groupBuyStartAt)}
-                            {p.groupBuyEndAt ? ` ~ ${formatDateShort(p.groupBuyEndAt)}` : " ~"}
-                          </Typography>
-                        ) : (
-                          <Typography variant="caption" sx={{ color: "text.disabled" }}>-</Typography>
-                        )}
-                      </TableCell>
-                      <TableCell align="right">
-                        <Box>
-                          <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main" }}>{formatWon(p.price)}</Typography>
-                          {p.salePrice && <Typography variant="caption" sx={{ color: "error.main" }}>{formatWon(p.salePrice)}</Typography>}
-                        </Box>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Tooltip title={p.isActive ? "비활성화" : "활성화"}>
-                          <Switch checked={p.isActive} onChange={() => handleToggle(p)} size="small" />
-                        </Tooltip>
-                      </TableCell>
-                      <TableCell align="center">
-                        <IconButton size="small" onClick={() => openEdit(p)}><EditIcon fontSize="small" /></IconButton>
-                        <IconButton size="small" color="error" onClick={() => setDeleteId(p.id)}><DeleteIcon fontSize="small" /></IconButton>
-                      </TableCell>
+          {/* 목록 뷰 */}
+          {viewMode === "list" && (
+            <Paper elevation={0} sx={{ border: "1px solid #e0e0e0" }}>
+              <TableContainer>
+                <Table>
+                  <TableHead>
+                    <TableRow sx={{ "& th": { fontWeight: 700, bgcolor: "#f5f5f5" } }}>
+                      <TableCell>제품명</TableCell>
+                      <TableCell>매장</TableCell>
+                      <TableCell>공구일</TableCell>
+                      <TableCell align="right">가격</TableCell>
+                      <TableCell align="center">상태</TableCell>
+                      <TableCell align="center">관리</TableCell>
                     </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow><TableCell colSpan={6} align="center" sx={{ py: 6 }}><CircularProgress /></TableCell></TableRow>
+                    ) : products.length === 0 ? (
+                      <TableRow><TableCell colSpan={6} align="center" sx={{ py: 6, color: "text.secondary" }}>등록된 제품이 없습니다</TableCell></TableRow>
+                    ) : products.map((p) => (
+                      <TableRow key={p.id} hover selected={editTarget?.id === p.id}
+                        sx={{ "&.Mui-selected": { bgcolor: "#e3f2fd" } }}>
+                        <TableCell>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                            <Avatar src={p.imageUrl || undefined} variant="rounded" sx={{ width: 40, height: 40, bgcolor: "#f5f5f5" }}>
+                              <ImageIcon color="disabled" />
+                            </Avatar>
+                            <Box>
+                              <Typography variant="body2" sx={{ fontWeight: 600 }}>{p.name}</Typography>
+                              {p.category && <Typography variant="caption" sx={{ color: "text.secondary" }}>{p.category.name}</Typography>}
+                            </Box>
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                            {getFactoryNames(p).map((name, i) => (
+                              <Chip key={i} label={name} size="small" variant="outlined" sx={{ height: 20, fontSize: 11 }} />
+                            ))}
+                          </Box>
+                        </TableCell>
+                        <TableCell>
+                          {p.groupBuyStartAt ? (
+                            <Typography variant="caption" sx={{ color: "primary.main" }}>
+                              {formatDateShort(p.groupBuyStartAt)}
+                              {p.groupBuyEndAt ? ` ~ ${formatDateShort(p.groupBuyEndAt)}` : " ~"}
+                            </Typography>
+                          ) : (
+                            <Typography variant="caption" sx={{ color: "text.disabled" }}>-</Typography>
+                          )}
+                        </TableCell>
+                        <TableCell align="right">
+                          <Box>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main" }}>{formatWon(p.price)}</Typography>
+                            {p.salePrice && <Typography variant="caption" sx={{ color: "error.main" }}>{formatWon(p.salePrice)}</Typography>}
+                          </Box>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Tooltip title={p.isActive ? "비활성화" : "활성화"}>
+                            <Switch checked={p.isActive} onChange={() => handleToggle(p)} size="small" />
+                          </Tooltip>
+                        </TableCell>
+                        <TableCell align="center">
+                          <IconButton size="small" onClick={() => openEdit(p)}><EditIcon fontSize="small" /></IconButton>
+                          <IconButton size="small" color="error" onClick={() => setDeleteId(p.id)}><DeleteIcon fontSize="small" /></IconButton>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              <TablePagination
+                component="div" count={total} page={page} rowsPerPage={20}
+                onPageChange={(_, p) => setPage(p)} rowsPerPageOptions={[20]}
+                labelDisplayedRows={({ from, to, count }) => `${from}-${to} / 전체 ${count}개`}
+              />
+            </Paper>
+          )}
+
+          {/* 카드 뷰 */}
+          {viewMode === "grid" && (
+            loading ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
+            ) : (
+              <>
+                <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                  {products.length === 0 ? (
+                    <Grid size={12}>
+                      <Box sx={{ py: 8, textAlign: "center", color: "text.secondary" }}>
+                        <InventoryIcon sx={{ fontSize: 64, opacity: 0.3, display: "block", mx: "auto", mb: 2 }} />
+                        <Typography>등록된 제품이 없습니다</Typography>
+                      </Box>
+                    </Grid>
+                  ) : products.map((p) => (
+                    <Grid key={p.id} size={{ xs: 6, sm: 4, md: 3 }}>
+                      <Card elevation={0} sx={{
+                        border: editTarget?.id === p.id ? "2px solid #1976d2" : "1px solid #e0e0e0",
+                        height: "100%", display: "flex", flexDirection: "column",
+                        opacity: p.isActive ? 1 : 0.6,
+                      }}>
+                        {p.imageUrl ? (
+                          <CardMedia component="img" image={p.imageUrl} alt={p.name}
+                            sx={{ height: { xs: 110, sm: 150 }, objectFit: "cover" }} />
+                        ) : (
+                          <Box sx={{ height: { xs: 110, sm: 150 }, bgcolor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                            <ImageIcon sx={{ fontSize: 40, color: "#ccc" }} />
+                          </Box>
+                        )}
+                        <CardContent sx={{ flex: 1, p: { xs: 1, sm: 1.5 }, "&:last-child": { pb: { xs: 1, sm: 1.5 } } }}>
+                          <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.5, mb: 0.5 }}>
+                            {getFactoryNames(p).map((name, i) => (
+                              <Chip key={i} label={name} size="small" color="primary" variant="outlined"
+                                sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
+                            ))}
+                          </Stack>
+                          <Typography variant="subtitle2" sx={{
+                            fontWeight: 700, fontSize: { xs: 11, sm: 13 },
+                            display: "-webkit-box", WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical", overflow: "hidden", mb: 0.5,
+                          }}>
+                            {p.name}
+                          </Typography>
+                          <Typography sx={{ fontWeight: 700, color: "primary.main", fontSize: { xs: 12, sm: 14 } }}>
+                            {formatWon(p.salePrice ?? p.price)}
+                          </Typography>
+                          {p.salePrice && (
+                            <Typography variant="caption" sx={{ color: "text.secondary", textDecoration: "line-through", fontSize: 10 }}>
+                              {formatWon(p.price)}
+                            </Typography>
+                          )}
+                          {/* 관리 버튼 */}
+                          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+                            <Tooltip title={p.isActive ? "비활성화" : "활성화"}>
+                              <Switch checked={p.isActive} onChange={() => handleToggle(p)} size="small" />
+                            </Tooltip>
+                            <Box>
+                              <IconButton size="small" onClick={() => openEdit(p)}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
+                              <IconButton size="small" color="error" onClick={() => setDeleteId(p.id)}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
+                            </Box>
+                          </Stack>
+                        </CardContent>
+                      </Card>
+                    </Grid>
                   ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-            <TablePagination
-              component="div" count={total} page={page} rowsPerPage={20}
-              onPageChange={(_, p) => setPage(p)} rowsPerPageOptions={[20]}
-              labelDisplayedRows={({ from, to, count }) => `${from}-${to} / 전체 ${count}개`}
-            />
-          </Paper>
+                </Grid>
+                <TablePagination
+                  component="div" count={total} page={page} rowsPerPage={20}
+                  onPageChange={(_, p) => setPage(p)} rowsPerPageOptions={[20]}
+                  labelDisplayedRows={({ from, to, count }) => `${from}-${to} / 전체 ${count}개`}
+                  sx={{ mt: 1 }}
+                />
+              </>
+            )
+          )}
         </Box>
 
         {/* 등록/수정 패널 */}
