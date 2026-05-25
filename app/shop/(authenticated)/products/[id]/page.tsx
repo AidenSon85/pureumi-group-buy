@@ -39,6 +39,8 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userPhoneDigits, setUserPhoneDigits] = useState<string | null>(null);
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [phoneDigits, setPhoneDigits] = useState("");
@@ -56,11 +58,16 @@ export default function ProductDetailPage() {
       setProduct(p);
       setQty(p.minQty || 1);
       setComments(c || []);
+      if (u?.id) setCurrentUserId(u.id);
       if (u?.phone) {
         const digits = u.phone.replace(/\D/g, "").slice(-4);
         setPhoneDigits(digits);
+        setUserPhoneDigits(digits);
       }
-      if (u?.id) setCurrentUserId(u.id);
+      // 이 제품의 대기 중인 주문 조회 (userId/orderId 없는 기존 댓글 대비 폴백)
+      fetch(`/api/shop/orders/pending?productId=${id}`).then((r) => r.json()).then((o) => {
+        if (o?.id) setPendingOrderId(o.id);
+      });
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [id]);
@@ -135,13 +142,15 @@ export default function ProductDetailPage() {
   };
 
   const handleCancelOrder = async (comment: Comment) => {
-    if (!comment.orderId) return;
+    const targetOrderId = comment.orderId || pendingOrderId;
+    if (!targetOrderId) return;
     setCancellingId(comment.id);
     try {
-      const res = await fetch(`/api/shop/orders/${comment.orderId}`, { method: "PATCH" });
+      const res = await fetch(`/api/shop/orders/${targetOrderId}`, { method: "PATCH" });
       if (res.ok) {
         await fetch(`/api/products/${id}/comments?commentId=${comment.id}`, { method: "DELETE" });
         setComments((prev) => prev.filter((c) => c.id !== comment.id));
+        setPendingOrderId(null);
         setSnack({ open: true, msg: "주문이 취소되었습니다", severity: "success" });
       } else {
         const d = await res.json();
@@ -315,16 +324,22 @@ export default function ProductDetailPage() {
                     {c.content && (
                       <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13 }}>{c.content}</Typography>
                     )}
-                    {currentUserId && c.userId === currentUserId && c.orderId && (
-                      <Button
-                        size="small" color="error" variant="text"
-                        onClick={() => handleCancelOrder(c)}
-                        disabled={cancellingId === c.id}
-                        sx={{ mt: 0.5, px: 0, minWidth: 0, fontSize: 12 }}
-                      >
-                        {cancellingId === c.id ? "취소 중..." : "주문 취소"}
-                      </Button>
-                    )}
+                    {(() => {
+                      const isMyComment =
+                        (currentUserId && c.userId === currentUserId) ||
+                        (userPhoneDigits && c.phoneDigits === userPhoneDigits);
+                      const canCancel = isMyComment && (c.orderId || pendingOrderId);
+                      return canCancel ? (
+                        <Button
+                          size="small" color="error" variant="text"
+                          onClick={() => handleCancelOrder(c)}
+                          disabled={cancellingId === c.id}
+                          sx={{ mt: 0.5, px: 0, minWidth: 0, fontSize: 12 }}
+                        >
+                          {cancellingId === c.id ? "취소 중..." : "주문 취소"}
+                        </Button>
+                      ) : null;
+                    })()}
                   </Box>
                 </Stack>
 
