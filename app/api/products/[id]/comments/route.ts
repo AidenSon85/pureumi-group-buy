@@ -4,15 +4,27 @@ import prisma from "@/lib/prisma";
 export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const comments = await prisma.productComment.findMany({
-    where: { productId: id },
+    where: { productId: id, parentId: null },
     orderBy: { createdAt: "desc" },
+    include: {
+      replies: { orderBy: { createdAt: "asc" } },
+    },
   });
   return NextResponse.json(comments);
 }
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { name, phoneDigits, content } = await req.json();
+  const { name, phoneDigits, content, parentId, isAdminReply } = await req.json();
+
+  if (isAdminReply) {
+    if (!content?.trim()) return NextResponse.json({ error: "답글 내용을 입력해주세요" }, { status: 400 });
+    if (!parentId) return NextResponse.json({ error: "parentId 필요" }, { status: 400 });
+    const comment = await prisma.productComment.create({
+      data: { productId: id, parentId, name: "관리자", phoneDigits: "0000", content: content.trim(), isAdminReply: true },
+    });
+    return NextResponse.json(comment, { status: 201 });
+  }
 
   if (!name?.trim()) return NextResponse.json({ error: "이름을 입력해주세요" }, { status: 400 });
   if (!phoneDigits?.trim()) return NextResponse.json({ error: "전화번호 뒷자리를 입력해주세요" }, { status: 400 });

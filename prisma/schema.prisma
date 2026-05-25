@@ -64,14 +64,19 @@ model Category {
 }
 
 model ProductComment {
-  id          String   @id @default(cuid())
-  name        String
-  phoneDigits String
-  content     String?
-  createdAt   DateTime @default(now())
+  id           String   @id @default(cuid())
+  name         String
+  phoneDigits  String
+  content      String?
+  isAdminReply Boolean  @default(false)
+  createdAt    DateTime @default(now())
 
-  productId   String
-  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  parentId     String?
+  parent       ProductComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies      ProductComment[] @relation("CommentReplies")
 }
 
 model Product {

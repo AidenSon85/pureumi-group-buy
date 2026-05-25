@@ -27,7 +27,9 @@ interface Product {
 }
 interface Factory { id: string; name: string }
 interface Comment {
-  id: string; name: string; phoneDigits: string; content: string | null; createdAt: string;
+  id: string; name: string; phoneDigits: string; content: string | null;
+  isAdminReply: boolean; createdAt: string;
+  replies?: Comment[];
 }
 
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
@@ -59,6 +61,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [commentForm, setCommentForm] = useState({ name: "", phoneDigits: "", content: "" });
   const [commentSaving, setCommentSaving] = useState(false);
   const [commentError, setCommentError] = useState("");
+  const [replyingTo, setReplyingTo] = useState<string | null>(null);
+  const [replyText, setReplyText] = useState("");
+  const [replySaving, setReplySaving] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -91,6 +96,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
       const d = await res.json();
       setCommentError(d.error || "오류가 발생했습니다");
     }
+  };
+
+  const handleReplySubmit = async (parentId: string) => {
+    if (!replyText.trim()) return;
+    setReplySaving(true);
+    const res = await fetch(`/api/products/${id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ parentId, content: replyText, isAdminReply: true }),
+    });
+    setReplySaving(false);
+    if (res.ok) { setReplyingTo(null); setReplyText(""); loadComments(); }
   };
 
   const handleCommentDelete = async (commentId: string) => {
@@ -291,28 +308,87 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           ) : (
             <Stack divider={<Divider />}>
               {comments.map((c) => (
-                <Stack key={c.id} direction="row" sx={{ alignItems: "flex-start", px: 2.5, py: 1.5, gap: 1.5 }}>
-                  <Avatar sx={{ width: 32, height: 32, bgcolor: "#e3f2fd", flexShrink: 0 }}>
-                    <PersonIcon sx={{ fontSize: 18, color: "#1976d2" }} />
-                  </Avatar>
-                  <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.3 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
-                      <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
-                        sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
-                      <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>
-                        {formatDateTime(c.createdAt)}
-                      </Typography>
+                <Box key={c.id}>
+                  {/* 원댓글 */}
+                  <Stack direction="row" sx={{ alignItems: "flex-start", px: 2.5, py: 1.5, gap: 1.5 }}>
+                    <Avatar sx={{ width: 32, height: 32, bgcolor: "#e3f2fd", flexShrink: 0 }}>
+                      <PersonIcon sx={{ fontSize: 18, color: "#1976d2" }} />
+                    </Avatar>
+                    <Box sx={{ flex: 1, minWidth: 0 }}>
+                      <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.3, flexWrap: "wrap" }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
+                        <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
+                          sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
+                        <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>
+                          {formatDateTime(c.createdAt)}
+                        </Typography>
+                      </Stack>
+                      {c.content && (
+                        <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13, mb: 0.5 }}>{c.content}</Typography>
+                      )}
+                      {/* 답글 달기 버튼 */}
+                      <Button size="small" variant="text"
+                        onClick={() => { setReplyingTo(replyingTo === c.id ? null : c.id); setReplyText(""); }}
+                        sx={{ fontSize: 11, px: 0.5, py: 0.2, minWidth: 0, color: "text.secondary", "&:hover": { color: "primary.main" } }}>
+                        {replyingTo === c.id ? "취소" : "↩ 답글"}
+                      </Button>
+                    </Box>
+                    <IconButton size="small" color="error" onClick={() => handleCommentDelete(c.id)}
+                      sx={{ flexShrink: 0, opacity: 0.5, "&:hover": { opacity: 1 } }}>
+                      <DeleteIcon sx={{ fontSize: 15 }} />
+                    </IconButton>
+                  </Stack>
+
+                  {/* 관리자 답글 입력 폼 */}
+                  {replyingTo === c.id && (
+                    <Box sx={{ ml: { xs: 5, sm: 6 }, mr: 2.5, mb: 1.5, p: 1.5, bgcolor: "#f0f4ff", borderRadius: 2, border: "1px solid #c5cae9" }}>
+                      <Stack direction="row" sx={{ alignItems: "center", gap: 0.5, mb: 1 }}>
+                        <Chip label="관리자" size="small" sx={{ bgcolor: "#1a237e", color: "#fff", fontWeight: 700, fontSize: 10, height: 20 }} />
+                        <Typography variant="caption" sx={{ color: "text.secondary" }}>답글 작성</Typography>
+                      </Stack>
+                      <Stack direction="row" spacing={1}>
+                        <TextField
+                          size="small" fullWidth multiline rows={2}
+                          placeholder="답글을 입력하세요..."
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          sx={{ bgcolor: "#fff", borderRadius: 1 }}
+                        />
+                        <Button variant="contained" size="small" disabled={replySaving || !replyText.trim()}
+                          onClick={() => handleReplySubmit(c.id)}
+                          sx={{ alignSelf: "flex-end", fontWeight: 700, minWidth: 60, bgcolor: "#1a237e" }}>
+                          {replySaving ? <CircularProgress size={14} /> : "등록"}
+                        </Button>
+                      </Stack>
+                    </Box>
+                  )}
+
+                  {/* 관리자 답글 목록 */}
+                  {c.replies && c.replies.length > 0 && (
+                    <Stack sx={{ ml: { xs: 5, sm: 6 }, mr: 2.5, mb: 1.5 }} spacing={0.5}>
+                      {c.replies.map((r) => (
+                        <Stack key={r.id} direction="row" sx={{ alignItems: "flex-start", gap: 1, p: 1.5, bgcolor: "#f0f4ff", borderRadius: 2, border: "1px solid #c5cae9" }}>
+                          <Avatar sx={{ width: 26, height: 26, bgcolor: "#1a237e", flexShrink: 0 }}>
+                            <PersonIcon sx={{ fontSize: 14, color: "#fff" }} />
+                          </Avatar>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Stack direction="row" sx={{ alignItems: "center", gap: 0.75, mb: 0.3 }}>
+                              <Chip label="관리자" size="small" sx={{ bgcolor: "#1a237e", color: "#fff", fontWeight: 700, fontSize: 10, height: 18, "& .MuiChip-label": { px: 0.75 } }} />
+                              <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>
+                                {formatDateTime(r.createdAt)}
+                              </Typography>
+                            </Stack>
+                            <Typography variant="body2" sx={{ fontSize: 13 }}>{r.content}</Typography>
+                          </Box>
+                          <IconButton size="small" color="error" onClick={() => handleCommentDelete(r.id)}
+                            sx={{ flexShrink: 0, opacity: 0.5, "&:hover": { opacity: 1 } }}>
+                            <DeleteIcon sx={{ fontSize: 13 }} />
+                          </IconButton>
+                        </Stack>
+                      ))}
                     </Stack>
-                    {c.content && (
-                      <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13 }}>{c.content}</Typography>
-                    )}
-                  </Box>
-                  <IconButton size="small" color="error" onClick={() => handleCommentDelete(c.id)}
-                    sx={{ flexShrink: 0, opacity: 0.6, "&:hover": { opacity: 1 } }}>
-                    <DeleteIcon sx={{ fontSize: 15 }} />
-                  </IconButton>
-                </Stack>
+                  )}
+                </Box>
               ))}
             </Stack>
           )}
