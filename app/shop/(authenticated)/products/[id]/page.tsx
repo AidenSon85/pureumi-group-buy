@@ -33,7 +33,6 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [snack, setSnack] = useState(false);
-  const [selectedImg, setSelectedImg] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`/api/products/${id}`)
@@ -41,7 +40,6 @@ export default function ProductDetailPage() {
       .then((d) => {
         setProduct(d);
         setQty(d.minQty || 1);
-        setSelectedImg(d.imageUrl);
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -81,32 +79,16 @@ export default function ProductDetailPage() {
         </IconButton>
       </Stack>
 
-      {/* 메인 이미지 */}
-      <Box sx={{ borderRadius: 2, overflow: "hidden", bgcolor: "#f8f8f8", mb: 1.5, aspectRatio: "1/1", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        {selectedImg ? (
-          <Box component="img" src={selectedImg} alt={product.name} sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
-        ) : (
+      {/* 대표 이미지 */}
+      {allImages.length === 0 ? (
+        <Box sx={{ borderRadius: 2, overflow: "hidden", bgcolor: "#f8f8f8", mb: 2, aspectRatio: "1/1", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <ImageIcon sx={{ fontSize: 96, color: "#ccc" }} />
-        )}
-      </Box>
-
-      {/* 썸네일 */}
-      {allImages.length > 1 && (
-        <Stack direction="row" spacing={1} sx={{ mb: 2, overflowX: "auto", pb: 0.5 }}>
-          {allImages.map((img, i) => (
-            <Box
-              key={i}
-              component="img"
-              src={img}
-              onClick={() => setSelectedImg(img)}
-              sx={{
-                width: 64, height: 64, borderRadius: 1.5, objectFit: "cover", flexShrink: 0, cursor: "pointer",
-                border: selectedImg === img ? "2.5px solid #1976d2" : "2.5px solid transparent",
-                opacity: selectedImg === img ? 1 : 0.7,
-              }}
-            />
-          ))}
-        </Stack>
+        </Box>
+      ) : (
+        <Box sx={{ mb: 2 }}>
+          <Box component="img" src={allImages[0]} alt={product.name}
+            sx={{ width: "100%", borderRadius: 2, display: "block" }} />
+        </Box>
       )}
 
       {/* 제품 정보 카드 */}
@@ -228,6 +210,21 @@ export default function ProductDetailPage() {
           <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.9, color: "text.secondary" }}>
             {product.content}
           </Typography>
+        </Paper>
+      )}
+
+      {/* 이미지 전체 나열 */}
+      {allImages.length > 1 && (
+        <Paper elevation={0} sx={{ border: "1px solid #f0f0f0", borderRadius: 2.5, overflow: "hidden", mb: 2 }}>
+          <Box sx={{ px: 2.5, py: 1.5, borderBottom: "1px solid #f0f0f0" }}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>상품 이미지 ({allImages.length}장)</Typography>
+          </Box>
+          <Stack spacing={0}>
+            {allImages.map((img, i) => (
+              <Box key={i} component="img" src={img} alt={`이미지 ${i + 1}`}
+                sx={{ width: "100%", display: "block" }} />
+            ))}
+          </Stack>
         </Paper>
       )}
 
