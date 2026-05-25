@@ -119,7 +119,7 @@ export default function ProductListPage() {
         <>
           <Typography variant="body2" sx={{ color: "text.secondary", mb: 1.5 }}>전체 {total}개 제품</Typography>
 
-          <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+          <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ maxWidth: 1200 }}>
             {products.map((p) => (
               <Grid key={p.id} size={{ xs: 6, sm: 6, md: 4, lg: 3 }}>
                 <Card
