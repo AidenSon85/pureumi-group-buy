@@ -14,10 +14,26 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
+  const { factoryIds, groupBuyStartAt, groupBuyEndAt, ...rest } = body;
+
+  const updateData: any = { ...rest };
+
+  if (factoryIds !== undefined) {
+    updateData.factoryIds = factoryIds;
+    if (factoryIds.length > 0) updateData.factoryId = factoryIds[0];
+  }
+  if (groupBuyStartAt !== undefined) {
+    updateData.groupBuyStartAt = groupBuyStartAt ? new Date(groupBuyStartAt) : null;
+  }
+  if (groupBuyEndAt !== undefined) {
+    updateData.groupBuyEndAt = groupBuyEndAt ? new Date(groupBuyEndAt) : null;
+  }
+
   try {
-    const product = await prisma.product.update({ where: { id }, data: body });
+    const product = await prisma.product.update({ where: { id }, data: updateData });
     return NextResponse.json(product);
-  } catch {
+  } catch (e) {
+    console.error(e);
     return NextResponse.json({ error: "서버 오류" }, { status: 500 });
   }
 }
