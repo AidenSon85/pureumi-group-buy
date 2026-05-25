@@ -120,7 +120,7 @@ export default function DashboardPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} />
                   <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `${(v / 10000).toFixed(0)}만`} />
-                  <Tooltip formatter={(v: number) => formatWon(v)} />
+                  <Tooltip formatter={(v) => typeof v === "number" ? formatWon(v) : String(v ?? "")} />
                   <Bar dataKey="salesAmount" name="매출" fill="#1976d2" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
