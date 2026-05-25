@@ -58,9 +58,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   // 댓글
   const [comments, setComments] = useState<Comment[]>([]);
-  const [commentForm, setCommentForm] = useState({ name: "", phoneDigits: "", content: "" });
-  const [commentSaving, setCommentSaving] = useState(false);
-  const [commentError, setCommentError] = useState("");
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState("");
   const [replySaving, setReplySaving] = useState(false);
@@ -77,26 +74,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const loadComments = () =>
     fetch(`/api/products/${id}/comments`).then((r) => r.json()).then(setComments);
-
-  const handleCommentSubmit = async () => {
-    setCommentError("");
-    if (!commentForm.name.trim()) { setCommentError("이름을 입력해주세요"); return; }
-    if (!/^\d{4}$/.test(commentForm.phoneDigits.trim())) { setCommentError("전화번호 뒷 4자리를 숫자로 입력해주세요"); return; }
-    setCommentSaving(true);
-    const res = await fetch(`/api/products/${id}/comments`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(commentForm),
-    });
-    setCommentSaving(false);
-    if (res.ok) {
-      setCommentForm({ name: "", phoneDigits: "", content: "" });
-      loadComments();
-    } else {
-      const d = await res.json();
-      setCommentError(d.error || "오류가 발생했습니다");
-    }
-  };
 
   const handleReplySubmit = async (parentId: string) => {
     if (!replyText.trim()) return;
@@ -251,53 +228,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         )}
       </Paper>
 
-      {/* 구매 등록 댓글 섹션 */}
+      {/* 구매 내역 / 관리자 답글 섹션 */}
       <Paper elevation={0} sx={{ border: "1px solid #e0e0e0", borderRadius: 2, overflow: "hidden", mb: 2 }}>
         <Stack direction="row" sx={{ alignItems: "center", gap: 1, px: 2.5, py: 1.5, borderBottom: "1px solid #e0e0e0", bgcolor: "#fafafa" }}>
           <CommentIcon sx={{ fontSize: 16, color: "primary.main" }} />
           <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-            구매 등록
+            구매 내역
             <Typography component="span" variant="caption" sx={{ color: "text.secondary", ml: 1 }}>
               ({comments.length}건)
             </Typography>
           </Typography>
         </Stack>
-
-        {/* 등록 폼 */}
-        <Box sx={{ p: { xs: 2, md: 2.5 }, borderBottom: "1px solid #f0f0f0" }}>
-          <Stack spacing={1.5}>
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
-              <TextField
-                size="small" label="이름 *" placeholder="홍길동"
-                value={commentForm.name}
-                onChange={(e) => setCommentForm({ ...commentForm, name: e.target.value })}
-                sx={{ flex: 1 }}
-              />
-              <TextField
-                size="small" label="전화번호 뒷 4자리 *" placeholder="1234"
-                value={commentForm.phoneDigits}
-                onChange={(e) => setCommentForm({ ...commentForm, phoneDigits: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-                slotProps={{ htmlInput: { maxLength: 4 } }}
-                sx={{ flex: 1 }}
-              />
-            </Stack>
-            <TextField
-              size="small" label="메모 (선택)" placeholder="수량, 요청사항 등"
-              value={commentForm.content}
-              onChange={(e) => setCommentForm({ ...commentForm, content: e.target.value })}
-              multiline rows={2} fullWidth
-            />
-            {commentError && (
-              <Typography variant="caption" sx={{ color: "error.main" }}>{commentError}</Typography>
-            )}
-            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-              <Button variant="contained" size="small" onClick={handleCommentSubmit} disabled={commentSaving}
-                sx={{ px: 3, fontWeight: 600 }}>
-                {commentSaving ? <CircularProgress size={16} /> : "구매 등록"}
-              </Button>
-            </Box>
-          </Stack>
-        </Box>
 
         {/* 댓글 목록 */}
         <Box>
