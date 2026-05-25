@@ -65,6 +65,7 @@ export default function ProductsPage() {
   const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [factoryFilter, setFactoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Product | null>(null);
   const [form, setForm] = useState(emptyForm());
@@ -84,11 +85,11 @@ export default function ProductsPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    const q = new URLSearchParams({ page: String(page), limit: "20", search, factoryId: factoryFilter });
+    const q = new URLSearchParams({ page: String(page), limit: "20", search, factoryId: factoryFilter, isActive: statusFilter });
     fetch(`/api/products?${q}`).then((r) => r.json()).then((d) => {
       setProducts(d.products || []); setTotal(d.total || 0); setLoading(false);
     }).catch(() => setLoading(false));
-  }, [page, search, factoryFilter]);
+  }, [page, search, factoryFilter, statusFilter]);
 
   useEffect(() => {
     Promise.all([
@@ -254,9 +255,9 @@ export default function ProductsPage() {
           </Stack>
 
           <Paper elevation={0} sx={{ p: 2, mb: 2, border: "1px solid #e0e0e0" }}>
-            <Stack direction="row" spacing={2}>
+            <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", gap: 1 }}>
               {!isManager && (
-                <FormControl size="small" sx={{ minWidth: 180 }}>
+                <FormControl size="small" sx={{ minWidth: 160 }}>
                   <InputLabel>매장</InputLabel>
                   <Select value={factoryFilter} label="매장" onChange={(e) => { setFactoryFilter(e.target.value); setPage(0); }}>
                     <MenuItem value="">전체</MenuItem>
@@ -264,11 +265,19 @@ export default function ProductsPage() {
                   </Select>
                 </FormControl>
               )}
+              <FormControl size="small" sx={{ minWidth: 130 }}>
+                <InputLabel>상태</InputLabel>
+                <Select value={statusFilter} label="상태" onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}>
+                  <MenuItem value="">전체</MenuItem>
+                  <MenuItem value="true">판매중</MenuItem>
+                  <MenuItem value="false">마감</MenuItem>
+                </Select>
+              </FormControl>
               <TextField
                 size="small" placeholder="제품명 검색" value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                 slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
-                sx={{ width: 280 }}
+                sx={{ width: 240 }}
               />
             </Stack>
           </Paper>
