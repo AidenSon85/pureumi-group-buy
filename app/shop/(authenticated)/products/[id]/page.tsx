@@ -401,6 +401,11 @@ export default function ProductDetailPage() {
               <Typography variant="body2" sx={{ color: "text.secondary" }}>
                 {qty}{product.unit} × {formatWon(price)} = <strong>{formatWon(price * qty)}</strong>
               </Typography>
+              {product.pickupStartAt && (
+                <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600, display: "block", mt: 0.5 }}>
+                  픽업 {new Date(product.pickupStartAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}~
+                </Typography>
+              )}
             </Box>
             {userPhoneDigits ? (
               <Box sx={{ p: 1.5, bgcolor: "#f0f4ff", borderRadius: 2, border: "1px solid #c5cae9" }}>

@@ -7,7 +7,7 @@ export async function GET(_: NextRequest, { params }: { params: Promise<{ id: st
   const { id } = await params;
   const comments = await prisma.productComment.findMany({
     where: { productId: id, parentId: null },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: "asc" },
     include: {
       replies: { orderBy: { createdAt: "asc" } },
     },

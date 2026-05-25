@@ -278,6 +278,11 @@ export default function ShopProductsPage() {
                 <Typography variant="body2" sx={{ color: "text.secondary" }}>
                   {getQty(dialogProduct)}{dialogProduct.unit} × {formatWon(dialogProduct.salePrice ?? dialogProduct.price)} = <strong>{formatWon((dialogProduct.salePrice ?? dialogProduct.price) * getQty(dialogProduct))}</strong>
                 </Typography>
+                {dialogProduct.pickupStartAt && (
+                  <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600, display: "block", mt: 0.5 }}>
+                    픽업 {new Date(dialogProduct.pickupStartAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}~
+                  </Typography>
+                )}
               </Box>
             )}
             {savedPhoneDigits ? (
