@@ -124,7 +124,7 @@ export default function ByUserOrdersPage() {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
-      <Box>
+      <Box sx={{ maxWidth: 1200, mx: "auto" }}>
         <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 2 }}>
           <PeopleIcon color="primary" />
           <Typography variant="h5" sx={{ fontWeight: 700 }}>사용자별 주문 내역</Typography>

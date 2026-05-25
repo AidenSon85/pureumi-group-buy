@@ -75,7 +75,7 @@ export default function FactoriesPage() {
   };
 
   return (
-    <Box>
+    <Box sx={{ maxWidth: 1200, mx: "auto" }}>
       <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 3 }}>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <StoreIcon color="primary" />

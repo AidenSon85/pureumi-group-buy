@@ -48,7 +48,7 @@ export default function DailyOrdersPage() {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
-      <Box>
+      <Box sx={{ maxWidth: 1200, mx: "auto" }}>
         <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 3 }}>
           <ShoppingCartIcon color="primary" />
           <Typography variant="h5" sx={{ fontWeight: 700 }}>일자별 주문 내역</Typography>

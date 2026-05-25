@@ -110,7 +110,7 @@ export default function OrdersPage() {
 
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
-      <Box>
+      <Box sx={{ maxWidth: 1400, mx: "auto" }}>
         <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 2 }}>
           <ShoppingCartIcon color="primary" />
           <Typography variant="h5" sx={{ fontWeight: 700 }}>주문(ORDER) 관리 - 최근 주문</Typography>

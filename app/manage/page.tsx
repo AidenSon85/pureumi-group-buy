@@ -1,11 +1,15 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { format, subDays } from "date-fns";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { ko } from "date-fns/locale";
 import {
   Box, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Chip, Avatar, Skeleton, Card, CardContent, Stack, TextField, InputAdornment,
-  IconButton, Tooltip, CardMedia,
+  IconButton, Tooltip, CardMedia, ToggleButtonGroup, ToggleButton,
 } from "@mui/material";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -34,7 +38,9 @@ export default function DashboardPage() {
 
   const [factories, setFactories] = useState<Factory[]>([]);
   const [selectedFactory, setSelectedFactory] = useState<string>("");
-  const [days, setDays] = useState<number>(14);
+  const [periodMode, setPeriodMode] = useState<"today" | "yesterday" | "14" | "30" | "custom">("14");
+  const [customStart, setCustomStart] = useState<Date | null>(subDays(new Date(), 13));
+  const [customEnd, setCustomEnd] = useState<Date | null>(new Date());
   const [stats, setStats] = useState<DailyStat[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [summary, setSummary] = useState<Summary>({ totalSales: 0, totalOrders: 0, totalVisitors: 0, activeProducts: 0 });
@@ -52,15 +58,40 @@ export default function DashboardPage() {
     fetch("/api/factories").then((r) => r.json()).then((data) => {
       setFactories(data);
       if (isManager && myFactoryId) setSelectedFactory(myFactoryId);
-      else if (data.length > 0) setSelectedFactory(data[0].id);
+      else setSelectedFactory("");
     });
   }, [status, isManager, myFactoryId]);
 
   useEffect(() => {
-    if (!selectedFactory) return;
+    if (isManager && !selectedFactory) return;
+    if (periodMode === "custom" && (!customStart || !customEnd)) return;
     setLoading(true);
+
+    let statsUrl = `/api/stats?factoryId=${selectedFactory}`;
+    let periodLabel = "14일";
+    const today = new Date();
+
+    if (periodMode === "today") {
+      const d = format(today, "yyyy-MM-dd");
+      statsUrl += `&startDate=${d}&endDate=${d}`;
+      periodLabel = "당일";
+    } else if (periodMode === "yesterday") {
+      const d = format(subDays(today, 1), "yyyy-MM-dd");
+      statsUrl += `&startDate=${d}&endDate=${d}`;
+      periodLabel = "어제";
+    } else if (periodMode === "14") {
+      statsUrl += `&days=14`;
+      periodLabel = "14일";
+    } else if (periodMode === "30") {
+      statsUrl += `&days=30`;
+      periodLabel = "30일";
+    } else if (periodMode === "custom" && customStart && customEnd) {
+      statsUrl += `&startDate=${format(customStart, "yyyy-MM-dd")}&endDate=${format(customEnd, "yyyy-MM-dd")}`;
+      periodLabel = `${format(customStart, "MM/dd")}~${format(customEnd, "MM/dd")}`;
+    }
+
     Promise.all([
-      fetch(`/api/stats?factoryId=${selectedFactory}&days=${days}`).then((r) => r.json()),
+      fetch(statsUrl).then((r) => r.json()),
       fetch(`/api/products?factoryId=${selectedFactory}&limit=100`).then((r) => r.json()),
     ]).then(([statsData, productsData]) => {
       const daily: DailyStat[] = statsData.daily || [];
@@ -74,7 +105,7 @@ export default function DashboardPage() {
       });
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, [selectedFactory, days]);
+  }, [selectedFactory, periodMode, customStart, customEnd]);
 
   const filteredProducts = allProducts.filter((p) => {
     const matchSearch = !productSearch || p.name.toLowerCase().includes(productSearch.toLowerCase());
@@ -82,10 +113,12 @@ export default function DashboardPage() {
     return matchSearch && matchStatus;
   });
 
+  const periodLabel = periodMode === "today" ? "당일" : periodMode === "yesterday" ? "어제" : periodMode === "14" ? "14일" : periodMode === "30" ? "30일" : (customStart && customEnd ? `${format(customStart,"MM/dd")}~${format(customEnd,"MM/dd")}` : "기간");
+
   const summaryCards = [
-    { title: `${days}일 매출`, value: formatWon(summary.totalSales), icon: <TrendingUpIcon />, color: "#1976d2" },
-    { title: `${days}일 주문`, value: `${summary.totalOrders}건`, icon: <ShoppingCartIcon />, color: "#388e3c" },
-    { title: `${days}일 방문자`, value: `${summary.totalVisitors}명`, icon: <PeopleIcon />, color: "#f57c00" },
+    { title: `${periodLabel} 매출`, value: formatWon(summary.totalSales), icon: <TrendingUpIcon />, color: "#1976d2" },
+    { title: `${periodLabel} 주문`, value: `${summary.totalOrders}건`, icon: <ShoppingCartIcon />, color: "#388e3c" },
+    { title: `${periodLabel} 방문자`, value: `${summary.totalVisitors}명`, icon: <PeopleIcon />, color: "#f57c00" },
     { title: "판매 제품", value: `${summary.activeProducts}종`, icon: <StoreIcon />, color: "#7b1fa2" },
   ];
 
@@ -95,23 +128,47 @@ export default function DashboardPage() {
   };
 
   return (
+    <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
     <Box sx={{ maxWidth: 1400, mx: "auto" }}>
       {/* 헤더 */}
-      <Stack direction={{ xs: "column", sm: "row" }} sx={{ alignItems: { xs: "stretch", sm: "center" }, justifyContent: "space-between", mb: 3, gap: 1.5 }}>
+      <Stack direction={{ xs: "column", sm: "row" }} sx={{ alignItems: { xs: "stretch", sm: "flex-start" }, justifyContent: "space-between", mb: 3, gap: 1.5 }}>
         <Typography variant="h5" sx={{ fontWeight: 700 }}>대시보드</Typography>
-        <Stack direction="row" spacing={1.5} sx={{ flexWrap: "wrap", alignItems: "center" }}>
-          <FormControl size="small" sx={{ minWidth: 100 }}>
-            <InputLabel>기간</InputLabel>
-            <Select value={days} label="기간" onChange={(e) => setDays(Number(e.target.value))}>
-              <MenuItem value={7}>7일</MenuItem>
-              <MenuItem value={14}>14일</MenuItem>
-              <MenuItem value={30}>30일</MenuItem>
-            </Select>
-          </FormControl>
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ flexWrap: "wrap", alignItems: { xs: "stretch", sm: "center" } }}>
+          {/* 기간 토글 */}
+          <ToggleButtonGroup
+            value={periodMode} exclusive size="small"
+            onChange={(_, v) => { if (v) setPeriodMode(v); }}
+            sx={{ "& .MuiToggleButton-root": { px: 1.5, py: 0.5, fontSize: 12, fontWeight: 600 } }}
+          >
+            <ToggleButton value="today">당일</ToggleButton>
+            <ToggleButton value="yesterday">어제</ToggleButton>
+            <ToggleButton value="14">14일</ToggleButton>
+            <ToggleButton value="30">30일</ToggleButton>
+            <ToggleButton value="custom">기간선택</ToggleButton>
+          </ToggleButtonGroup>
+
+          {/* 기간선택 시 DatePicker */}
+          {periodMode === "custom" && (
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <DatePicker
+                label="시작일" value={customStart}
+                onChange={(v) => setCustomStart(v)}
+                slotProps={{ textField: { size: "small", sx: { width: 150 } } }}
+              />
+              <Typography variant="body2">~</Typography>
+              <DatePicker
+                label="종료일" value={customEnd}
+                onChange={(v) => setCustomEnd(v)}
+                slotProps={{ textField: { size: "small", sx: { width: 150 } } }}
+              />
+            </Stack>
+          )}
+
           {!isManager && (
-            <FormControl size="small" sx={{ minWidth: 200, bgcolor: "#fff", borderRadius: 2 }}>
+            <FormControl size="small" sx={{ minWidth: 200 }}>
               <InputLabel>매장 선택</InputLabel>
               <Select value={selectedFactory} label="매장 선택" onChange={(e) => setSelectedFactory(e.target.value)}>
+                <MenuItem value="">전체 매장</MenuItem>
                 {factories.map((f) => (
                   <MenuItem key={f.id} value={f.id}>{f.name} ({f.code})</MenuItem>
                 ))}
@@ -148,7 +205,7 @@ export default function DashboardPage() {
       <Grid container spacing={3} sx={{ mb: 3 }}>
         <Grid size={{ xs: 12, md: 7 }}>
           <Paper elevation={0} sx={{ p: 3, border: "1px solid #e0e0e0" }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>일별 매출 현황 ({days}일)</Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>일별 매출 현황 ({periodLabel})</Typography>
             {loading ? <Skeleton variant="rectangular" height={260} /> : (
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={stats} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
@@ -164,7 +221,7 @@ export default function DashboardPage() {
         </Grid>
         <Grid size={{ xs: 12, md: 5 }}>
           <Paper elevation={0} sx={{ p: 3, border: "1px solid #e0e0e0" }}>
-            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>일별 방문자 수 ({days}일)</Typography>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2 }}>일별 방문자 수 ({periodLabel})</Typography>
             {loading ? <Skeleton variant="rectangular" height={260} /> : (
               <ResponsiveContainer width="100%" height={260}>
                 <LineChart data={stats} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
@@ -346,5 +403,6 @@ export default function DashboardPage() {
         )}
       </Paper>
     </Box>
+    </LocalizationProvider>
   );
 }
