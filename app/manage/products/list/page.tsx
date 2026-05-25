@@ -101,7 +101,8 @@ export default function ProductListPage() {
           <Grid container spacing={2}>
             {products.map((p) => (
               <Grid key={p.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
-                <Card elevation={0} sx={{ border: "1px solid #e0e0e0", height: "100%", display: "flex", flexDirection: "column" }}>
+                <Card elevation={0} onClick={() => router.push(`/manage/products/list/${p.id}`)}
+                  sx={{ border: "1px solid #e0e0e0", height: "100%", display: "flex", flexDirection: "column", cursor: "pointer", "&:hover": { boxShadow: 3, borderColor: "#1976d2" } }}>
                   {p.imageUrl ? (
                     <CardMedia component="img" image={p.imageUrl} alt={p.name} sx={{ height: 160, objectFit: "cover" }} />
                   ) : (
