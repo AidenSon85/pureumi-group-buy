@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell($r = Invoke-WebRequest -Uri \"https://bfrsdilwlixrmhnjfsmf.supabase.co/rest/v1/\" -Method GET -ErrorAction SilentlyContinue; $r.StatusCode)",
+      "PowerShell(cd \"c:\\\\Users\\\\Aiden\\\\pureumi-group-buy\"; $env:NODE_OPTIONS=\"--dns-result-order=ipv6first\"; node test-db.mjs 2>&1; $env:NODE_OPTIONS=\"\")",
+      "Bash(git add *)"
+    ]
+  }
+}

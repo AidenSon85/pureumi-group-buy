@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  CUSTOMER
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+model Factory {
+  id          String    @id @default(cuid())
+  name        String
+  code        String    @unique
+  address     String?
+  phone       String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  users       User[]
+  products    Product[]
+  orders      Order[]
+  dailyStats  DailyStat[]
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  password    String
+  name        String
+  phone       String?
+  role        Role      @default(CUSTOMER)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  factoryId   String?
+  factory     Factory?  @relation(fields: [factoryId], references: [id])
+
+  orders      Order[]
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+
+  products    Product[]
+}
+
+model Product {
+  id          String    @id @default(cuid())
+  name        String
+  description String?
+  content     String?   @db.Text
+  price       Int
+  salePrice   Int?
+  unit        String    @default("개")
+  minQty      Int       @default(1)
+  maxQty      Int?
+  stock       Int       @default(0)
+  imageUrl    String?
+  images      String[]
+  isActive    Boolean   @default(true)
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  factoryId   String
+  factory     Factory   @relation(fields: [factoryId], references: [id])
+
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  orderNo       String      @unique
+  status        OrderStatus @default(PENDING)
+  totalAmount   Int
+  memo          String?
+  deliveryAddr  String?
+  orderedAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  userId        String
+  user          User        @relation(fields: [userId], references: [id])
+
+  factoryId     String
+  factory       Factory     @relation(fields: [factoryId], references: [id])
+
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  quantity  Int
+  price     Int
+  amount    Int
+
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model DailyStat {
+  id            String   @id @default(cuid())
+  date          DateTime @db.Date
+  salesAmount   Int      @default(0)
+  orderCount    Int      @default(0)
+  visitorCount  Int      @default(0)
+
+  factoryId     String
+  factory       Factory  @relation(fields: [factoryId], references: [id])
+
+  @@unique([factoryId, date])
+}
