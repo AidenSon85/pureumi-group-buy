@@ -110,19 +110,33 @@ export default function ProductsPage() {
     setUploading(true);
     const uploaded: string[] = [];
     for (const file of Array.from(files)) {
-      const fd = new FormData();
-      fd.append("file", file);
       try {
-        const res = await fetch("/api/upload", { method: "POST", body: fd });
-        const d = await res.json();
-        if (d.url) uploaded.push(d.url);
+        // 서버에서 presigned URL 발급
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName: file.name, contentType: file.type }),
+        });
+        const { signedUrl, publicUrl, error } = await res.json();
+        if (error || !signedUrl) continue;
+
+        // 브라우저에서 Supabase에 직접 업로드 (서버 경유 없음 → 파일 크기 제한 없음)
+        const uploadRes = await fetch(signedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "application/octet-stream" },
+          body: file,
+        });
+        if (uploadRes.ok) uploaded.push(publicUrl);
       } catch { /* skip failed */ }
     }
-    setForm((f) => {
-      const newImages = [...f.images, ...uploaded];
-      return { ...f, images: newImages, imageUrl: f.imageUrl || newImages[0] || "" };
-    });
+    if (uploaded.length > 0) {
+      setForm((f) => {
+        const newImages = [...f.images, ...uploaded];
+        return { ...f, images: newImages, imageUrl: f.imageUrl || newImages[0] || "" };
+      });
+    }
     setUploading(false);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const removeImage = (url: string) => {
