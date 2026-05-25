@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { ko } from "date-fns/locale";
@@ -73,6 +74,7 @@ export default function ProductsPage() {
     }
     return "list";
   });
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
@@ -353,10 +355,12 @@ export default function ProductsPage() {
                     </Grid>
                   ) : products.map((p) => (
                     <Grid key={p.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-                      <Card elevation={0} sx={{
+                      <Card elevation={0} onClick={() => router.push(`/manage/products/list/${p.id}`)} sx={{
                         border: editTarget?.id === p.id ? "2px solid #1976d2" : "1px solid #e0e0e0",
                         height: "100%", display: "flex", flexDirection: "column",
                         opacity: p.isActive ? 1 : 0.6,
+                        cursor: "pointer",
+                        "&:hover": { boxShadow: 3, borderColor: "#1976d2" },
                       }}>
                         {p.imageUrl ? (
                           <CardMedia component="img" image={p.imageUrl} alt={p.name}
@@ -389,7 +393,7 @@ export default function ProductsPage() {
                             </Typography>
                           )}
                           {/* 관리 버튼 */}
-                          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 1 }}>
+                          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 1 }} onClick={(e) => e.stopPropagation()}>
                             <Tooltip title={p.isActive ? "비활성화" : "활성화"}>
                               <Switch checked={p.isActive} onChange={() => handleToggle(p)} size="small" />
                             </Tooltip>
