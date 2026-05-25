@@ -180,9 +180,9 @@ export default function ShopProductsPage() {
               return (
                 <Grid key={p.id} size={{ xs: 12, sm: 6, md: 4, lg: 3 }}>
                   <Card elevation={0} sx={{ border: "1px solid #e8e8e8", borderRadius: 2, height: "100%", display: "flex", flexDirection: "column", transition: "box-shadow 0.2s", "&:hover": { boxShadow: "0 4px 20px rgba(0,0,0,0.1)" } }}>
-                    <Box sx={{ position: "relative", cursor: "pointer" }} onClick={() => router.push(`/shop/products/${p.id}`)}>
+                    <Box sx={{ position: "relative", cursor: "pointer", height: 180, overflow: "hidden" }} onClick={() => router.push(`/shop/products/${p.id}`)}>
                       {p.imageUrl ? (
-                        <CardMedia component="img" image={p.imageUrl} alt={p.name} sx={{ height: 180, objectFit: "cover" }} />
+                        <CardMedia component="img" image={p.imageUrl} alt={p.name} sx={{ width: "100%", height: 180, objectFit: "cover" }} />
                       ) : (
                         <Box sx={{ height: 180, bgcolor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <ImageIcon sx={{ fontSize: 56, color: "#ccc" }} />
@@ -196,22 +196,33 @@ export default function ShopProductsPage() {
                       )}
                     </Box>
 
-                    <CardContent sx={{ flex: 1, pb: 1 }}>
-                      {p.category && <Typography variant="caption" sx={{ color: "text.secondary" }}>{p.category.name}</Typography>}
-                      {p.pickupStartAt && (
-                        <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600, display: "block" }}>
-                          픽업 {new Date(p.pickupStartAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}~
+                    <CardContent sx={{ flex: 1, pb: 1, display: "flex", flexDirection: "column", gap: 0 }}>
+                      {/* 구역 1: 카테고리 + 픽업일 */}
+                      <Box sx={{ pb: 1, borderBottom: "1px solid #f0f0f0" }}>
+                        <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
+                          <Typography variant="caption" sx={{ color: "text.secondary" }}>{p.category?.name || ""}</Typography>
+                          <Typography variant="caption" sx={{ color: p.pickupStartAt ? "primary.main" : "text.disabled", fontWeight: p.pickupStartAt ? 600 : 400 }}>
+                            {p.pickupStartAt
+                              ? `픽업 ${new Date(p.pickupStartAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}~`
+                              : "픽업일 미정"}
+                          </Typography>
+                        </Stack>
+                      </Box>
+
+                      {/* 구역 2: 제품명 + 설명 */}
+                      <Box sx={{ py: 1.5, borderBottom: "1px solid #f0f0f0", flex: 1 }}>
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, cursor: "pointer", "&:hover": { color: "primary.main" }, mb: 0.5 }} onClick={() => router.push(`/shop/products/${p.id}`)}>
+                          {p.name}
                         </Typography>
-                      )}
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, mt: 0.5, cursor: "pointer", "&:hover": { color: "primary.main" } }} onClick={() => router.push(`/shop/products/${p.id}`)}>
-                        {p.name}
-                      </Typography>
-                      {p.description && (
-                        <Typography variant="caption" sx={{ color: "text.secondary", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                          {p.description}
-                        </Typography>
-                      )}
-                      <Box sx={{ mt: 1.5 }}>
+                        {p.description && (
+                          <Typography variant="caption" sx={{ color: "text.secondary", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                            {p.description}
+                          </Typography>
+                        )}
+                      </Box>
+
+                      {/* 구역 3: 가격 + 재고 */}
+                      <Box sx={{ pt: 1.5 }}>
                         {p.salePrice ? (
                           <>
                             <Typography variant="caption" sx={{ color: "text.disabled", textDecoration: "line-through", display: "block" }}>{formatWon(p.price)}</Typography>
