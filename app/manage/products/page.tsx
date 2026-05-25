@@ -41,7 +41,7 @@ interface Product {
 }
 
 const emptyForm = () => ({
-  name: "", description: "", content: "", price: "", salePrice: "", unit: "개",
+  name: "", description: "", content: "", price: "", salePrice: "", unit: "EA",
   stock: "0", imageUrl: "", images: [] as string[], isActive: true,
   factoryIds: [] as string[], categoryId: "",
   groupBuyStartAt: null as Date | null,
@@ -592,8 +592,14 @@ export default function ProductsPage() {
                   onChange={(e) => setForm({ ...form, stock: e.target.value })} />
               </Grid>
               <Grid size={6}>
-                <TextField label="단위" value={form.unit} fullWidth
-                  onChange={(e) => setForm({ ...form, unit: e.target.value })} />
+                <FormControl fullWidth>
+                  <InputLabel>단위</InputLabel>
+                  <Select value={form.unit} label="단위" onChange={(e) => setForm({ ...form, unit: e.target.value })}>
+                    {["EA", "BOX", "SET", "BAG", "PACK", "BOTTLE", "KG", "G", "L", "ML"].map((u) => (
+                      <MenuItem key={u} value={u}>{u}</MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
               </Grid>
             </Grid>
 
