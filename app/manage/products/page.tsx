@@ -343,7 +343,7 @@ export default function ProductsPage() {
               <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
             ) : (
               <>
-                <Grid container spacing={{ xs: 1.5, sm: 2 }}>
+                <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ maxWidth: 1200 }}>
                   {products.length === 0 ? (
                     <Grid size={12}>
                       <Box sx={{ py: 8, textAlign: "center", color: "text.secondary" }}>
@@ -352,7 +352,7 @@ export default function ProductsPage() {
                       </Box>
                     </Grid>
                   ) : products.map((p) => (
-                    <Grid key={p.id} size={{ xs: 6, sm: 4, md: 3 }}>
+                    <Grid key={p.id} size={{ xs: 6, sm: 4, md: 3, lg: 3 }}>
                       <Card elevation={0} sx={{
                         border: editTarget?.id === p.id ? "2px solid #1976d2" : "1px solid #e0e0e0",
                         height: "100%", display: "flex", flexDirection: "column",
@@ -360,9 +360,9 @@ export default function ProductsPage() {
                       }}>
                         {p.imageUrl ? (
                           <CardMedia component="img" image={p.imageUrl} alt={p.name}
-                            sx={{ height: { xs: 110, sm: 150 }, objectFit: "cover" }} />
+                            sx={{ height: { xs: 110, sm: 150 }, maxHeight: 180, objectFit: "cover" }} />
                         ) : (
-                          <Box sx={{ height: { xs: 110, sm: 150 }, bgcolor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Box sx={{ height: { xs: 110, sm: 150 }, maxHeight: 180, bgcolor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
                             <ImageIcon sx={{ fontSize: 40, color: "#ccc" }} />
                           </Box>
                         )}
