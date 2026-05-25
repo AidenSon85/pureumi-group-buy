@@ -326,9 +326,9 @@ export default function ProductDetailPage() {
                     )}
                     {(() => {
                       const isMyComment =
-                        (currentUserId && c.userId === currentUserId) ||
-                        (userPhoneDigits && c.phoneDigits === userPhoneDigits);
-                      const canCancel = isMyComment && (c.orderId || pendingOrderId);
+                        (currentUserId && c.userId === currentUserId && (c.orderId || pendingOrderId)) ||
+                        (userPhoneDigits && c.phoneDigits === userPhoneDigits && !!pendingOrderId);
+                      const canCancel = isMyComment;
                       return canCancel ? (
                         <Button
                           size="small" color="error" variant="text"
