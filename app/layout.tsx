@@ -4,8 +4,8 @@ import SessionProvider from "@/components/SessionProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PUREUMI 그룹바이",
-  description: "PUREUMI 그룹구매 관리 시스템",
+  title: "PUREUMI 공동구매",
+  description: "PUREUMI 공동구매",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
