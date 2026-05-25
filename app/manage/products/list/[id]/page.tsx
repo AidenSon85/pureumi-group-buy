@@ -180,24 +180,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
               <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5 }}>
                 상품 이미지 ({allImages.length}장)
               </Typography>
-              <Grid container spacing={1.5}>
+              <Stack spacing={1.5}>
                 {allImages.map((url, i) => (
-                  <Grid key={i} size={{ xs: 6, sm: 4 }}>
-                    <Box sx={{
-                      border: url === product.imageUrl ? "2px solid #1976d2" : "1px solid #e0e0e0",
-                      borderRadius: 1.5, overflow: "hidden", aspectRatio: "1", bgcolor: "#f5f5f5",
-                    }}>
-                      <Box component="img" src={url} alt={`이미지 ${i + 1}`}
-                        sx={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    </Box>
+                  <Box key={i}>
+                    <Box component="img" src={url} alt={`이미지 ${i + 1}`}
+                      sx={{ width: "100%", display: "block", borderRadius: 1.5, border: url === product.imageUrl ? "2px solid #1976d2" : "1px solid #e0e0e0" }} />
                     {url === product.imageUrl && (
-                      <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600, mt: 0.5, display: "block", textAlign: "center" }}>
-                        대표 이미지
+                      <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600, mt: 0.5, display: "block" }}>
+                        ★ 대표 이미지
                       </Typography>
                     )}
-                  </Grid>
+                  </Box>
                 ))}
-              </Grid>
+              </Stack>
             </Box>
           </>
         )}
