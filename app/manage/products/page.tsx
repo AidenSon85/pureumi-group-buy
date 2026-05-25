@@ -67,7 +67,12 @@ export default function ProductsPage() {
   const [uploadError, setUploadError] = useState("");
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [viewMode, setViewMode] = useState<"list" | "grid">(() => {
+    if (typeof window !== "undefined") {
+      return (localStorage.getItem("productViewMode") as "list" | "grid") || "list";
+    }
+    return "list";
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(() => {
@@ -219,13 +224,13 @@ export default function ProductsPage() {
             <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
               <Box sx={{ display: "flex", border: "1px solid #e0e0e0", borderRadius: 1, overflow: "hidden" }}>
                 <Tooltip title="목록 보기">
-                  <IconButton size="small" onClick={() => setViewMode("list")}
+                  <IconButton size="small" onClick={() => { setViewMode("list"); localStorage.setItem("productViewMode", "list"); }}
                     sx={{ borderRadius: 0, bgcolor: viewMode === "list" ? "#1a237e" : "transparent", color: viewMode === "list" ? "#fff" : "text.secondary", "&:hover": { bgcolor: viewMode === "list" ? "#1a237e" : "#f5f5f5" } }}>
                     <ViewListIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
                 <Tooltip title="카드 보기">
-                  <IconButton size="small" onClick={() => setViewMode("grid")}
+                  <IconButton size="small" onClick={() => { setViewMode("grid"); localStorage.setItem("productViewMode", "grid"); }}
                     sx={{ borderRadius: 0, bgcolor: viewMode === "grid" ? "#1a237e" : "transparent", color: viewMode === "grid" ? "#fff" : "text.secondary", "&:hover": { bgcolor: viewMode === "grid" ? "#1a237e" : "#f5f5f5" } }}>
                     <GridViewIcon fontSize="small" />
                   </IconButton>
