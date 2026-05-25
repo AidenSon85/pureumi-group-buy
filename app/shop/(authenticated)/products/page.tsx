@@ -18,6 +18,7 @@ interface Product {
   id: string; name: string; price: number; salePrice: number | null;
   stock: number; unit: string; isActive: boolean; imageUrl: string | null;
   description: string | null; minQty: number; maxQty: number | null;
+  pickupStartAt: string | null;
   category: { id: string; name: string } | null;
 }
 
@@ -210,6 +211,11 @@ export default function ShopProductsPage() {
                         <Typography variant="caption" sx={{ color: p.stock < 10 && p.stock > 0 ? "warning.main" : "text.secondary" }}>
                           재고 {p.stock}{p.unit}{p.stock < 10 && p.stock > 0 && " (소량)"}
                         </Typography>
+                        {p.pickupStartAt && (
+                          <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600, display: "block" }}>
+                            픽업 {new Date(p.pickupStartAt).toLocaleDateString("ko-KR", { month: "long", day: "numeric" })}~
+                          </Typography>
+                        )}
                       </Box>
                     </CardContent>
 
