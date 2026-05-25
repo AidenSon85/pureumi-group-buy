@@ -52,7 +52,7 @@ export default function ProductListPage() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <Box>
+    <Box sx={{ maxWidth: 1400, mx: "auto" }}>
       {/* 헤더 */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
@@ -119,9 +119,9 @@ export default function ProductListPage() {
         <>
           <Typography variant="body2" sx={{ color: "text.secondary", mb: 1.5 }}>전체 {total}개 제품</Typography>
 
-          <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ maxWidth: 1200 }}>
+          <Grid container spacing={{ xs: 1.5, sm: 2 }}>
             {products.map((p) => (
-              <Grid key={p.id} size={{ xs: 6, sm: 6, md: 4, lg: 3 }}>
+              <Grid key={p.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
                 <Card
                   elevation={0}
                   onClick={() => router.push(`/manage/products/list/${p.id}`)}
