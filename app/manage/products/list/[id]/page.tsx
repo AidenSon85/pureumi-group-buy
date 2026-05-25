@@ -12,7 +12,7 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import InventoryOutlinedIcon from "@mui/icons-material/InventoryOutlined";
-import CommentIcon from "@mui/icons-material/ChatBubbleOutline";
+import CommentIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PersonIcon from "@mui/icons-material/Person";
 
@@ -260,7 +260,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                 size="small" label="전화번호 뒷 4자리 *" placeholder="1234"
                 value={commentForm.phoneDigits}
                 onChange={(e) => setCommentForm({ ...commentForm, phoneDigits: e.target.value.replace(/\D/g, "").slice(0, 4) })}
-                inputProps={{ maxLength: 4 }}
+                slotProps={{ htmlInput: { maxLength: 4 } }}
                 sx={{ flex: 1 }}
               />
             </Stack>
