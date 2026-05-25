@@ -12,9 +12,9 @@ async function main() {
 
   // 카테고리
   const categories = await Promise.all([
-    prisma.category.upsert({ where: { id: "cat-1" }, update: {}, create: { id: "cat-1", name: "신선식품", sortOrder: 1 } }),
-    prisma.category.upsert({ where: { id: "cat-2" }, update: {}, create: { id: "cat-2", name: "가공식품", sortOrder: 2 } }),
-    prisma.category.upsert({ where: { id: "cat-3" }, update: {}, create: { id: "cat-3", name: "생활용품", sortOrder: 3 } }),
+    prisma.category.upsert({ where: { id: "cat-1" }, update: {}, create: { id: "cat-1", code: "CATE001", name: "신선식품", sortOrder: 1 } }),
+    prisma.category.upsert({ where: { id: "cat-2" }, update: {}, create: { id: "cat-2", code: "CATE002", name: "가공식품", sortOrder: 2 } }),
+    prisma.category.upsert({ where: { id: "cat-3" }, update: {}, create: { id: "cat-3", code: "CATE003", name: "생활용품", sortOrder: 3 } }),
   ]);
 
   // 매장
