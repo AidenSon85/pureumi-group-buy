@@ -3,15 +3,16 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Box, Typography, Button, Stack, Chip, Divider, IconButton,
-  CircularProgress, Snackbar, Alert, Paper, Badge,
+  CircularProgress, Snackbar, Alert, Paper, Badge, Avatar,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
-import ImageIcon from "@mui/icons-material/Image";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
+import PersonIcon from "@mui/icons-material/Person";
+import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import { useCart } from "@/components/shop/CartContext";
 
 interface Product {
@@ -21,8 +22,13 @@ interface Product {
   isActive: boolean; category: { name: string } | null;
   pickupStartAt: string | null; groupBuyEndAt: string | null;
 }
+interface Comment {
+  id: string; name: string; phoneDigits: string; content: string | null;
+  isAdminReply: boolean; createdAt: string; replies?: Comment[];
+}
 
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
+const formatDT = (s: string) => new Date(s).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,19 +36,21 @@ export default function ProductDetailPage() {
   const { addItem, count } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [snack, setSnack] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/products/${id}`)
-      .then((r) => r.json())
-      .then((d) => {
-        setProduct(d);
-        setQty(d.minQty || 1);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
+    Promise.all([
+      fetch(`/api/products/${id}`).then((r) => r.json()),
+      fetch(`/api/products/${id}/comments`).then((r) => r.json()),
+    ]).then(([p, c]) => {
+      setProduct(p);
+      setQty(p.minQty || 1);
+      setComments(c || []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, [id]);
 
   if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress /></Box>;
@@ -79,7 +87,6 @@ export default function ProductDetailPage() {
         </IconButton>
       </Stack>
 
-
       {/* 제품 정보 카드 */}
       <Paper elevation={0} sx={{ border: "1px solid #f0f0f0", borderRadius: 2.5, p: 2.5, mb: 2 }}>
         <Stack direction="row" spacing={0.75} sx={{ mb: 1.5, flexWrap: "wrap" }}>
@@ -101,7 +108,6 @@ export default function ProductDetailPage() {
 
         <Divider sx={{ mb: 2 }} />
 
-        {/* 가격 */}
         {product.salePrice ? (
           <Box sx={{ mb: 1 }}>
             <Typography variant="caption" sx={{ color: "text.disabled", textDecoration: "line-through", fontSize: 13 }}>
@@ -153,37 +159,23 @@ export default function ProductDetailPage() {
 
       {/* 수량 선택 */}
       <Paper elevation={0} sx={{ border: "1px solid #f0f0f0", borderRadius: 2.5, p: 2.5, mb: 2 }}>
-        <Typography variant="body2" sx={{ fontWeight: 600, mb: 2, color: "text.secondary" }}>
-          수량 선택
-        </Typography>
+        <Typography variant="body2" sx={{ fontWeight: 600, mb: 2, color: "text.secondary" }}>수량 선택</Typography>
         <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
           <Stack direction="row" sx={{ alignItems: "center", gap: 1.5 }}>
-            <IconButton
-              onClick={() => setQty((q) => Math.max(minQty, q - 1))}
-              disabled={qty <= minQty}
-              size="small"
-              sx={{ border: "1.5px solid #e0e0e0", borderRadius: 1.5, width: 36, height: 36 }}
-            >
+            <IconButton onClick={() => setQty((q) => Math.max(minQty, q - 1))} disabled={qty <= minQty} size="small"
+              sx={{ border: "1.5px solid #e0e0e0", borderRadius: 1.5, width: 36, height: 36 }}>
               <RemoveIcon fontSize="small" />
             </IconButton>
-            <Typography sx={{ fontWeight: 800, fontSize: 20, minWidth: 32, textAlign: "center" }}>
-              {qty}
-            </Typography>
-            <IconButton
-              onClick={() => setQty((q) => Math.min(maxQty, q + 1))}
-              disabled={qty >= maxQty}
-              size="small"
-              sx={{ border: "1.5px solid #e0e0e0", borderRadius: 1.5, width: 36, height: 36 }}
-            >
+            <Typography sx={{ fontWeight: 800, fontSize: 20, minWidth: 32, textAlign: "center" }}>{qty}</Typography>
+            <IconButton onClick={() => setQty((q) => Math.min(maxQty, q + 1))} disabled={qty >= maxQty} size="small"
+              sx={{ border: "1.5px solid #e0e0e0", borderRadius: 1.5, width: 36, height: 36 }}>
               <AddIcon fontSize="small" />
             </IconButton>
             <Typography variant="body2" sx={{ color: "text.secondary" }}>{product.unit}</Typography>
           </Stack>
           <Box sx={{ textAlign: "right" }}>
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>소계</Typography>
-            <Typography sx={{ fontWeight: 800, fontSize: 20, color: "primary.main" }}>
-              {formatWon(price * qty)}
-            </Typography>
+            <Typography sx={{ fontWeight: 800, fontSize: 20, color: "primary.main" }}>{formatWon(price * qty)}</Typography>
           </Box>
         </Stack>
         <Typography variant="caption" sx={{ color: "text.disabled", mt: 1, display: "block" }}>
@@ -203,19 +195,79 @@ export default function ProductDetailPage() {
       )}
 
       {/* 이미지 전체 나열 */}
-      {allImages.length > 1 && (
+      {allImages.length > 0 && (
         <Paper elevation={0} sx={{ border: "1px solid #f0f0f0", borderRadius: 2.5, overflow: "hidden", mb: 2 }}>
           <Box sx={{ px: 2.5, py: 1.5, borderBottom: "1px solid #f0f0f0" }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>상품 이미지 ({allImages.length}장)</Typography>
           </Box>
-          <Stack spacing={0}>
+          <Stack>
             {allImages.map((img, i) => (
-              <Box key={i} component="img" src={img} alt={`이미지 ${i + 1}`}
-                sx={{ width: "100%", display: "block" }} />
+              <Box key={i} component="img" src={img} alt={`이미지 ${i + 1}`} sx={{ width: "100%", display: "block" }} />
             ))}
           </Stack>
         </Paper>
       )}
+
+      {/* 구매 내역 댓글 */}
+      <Paper elevation={0} sx={{ border: "1px solid #f0f0f0", borderRadius: 2.5, overflow: "hidden", mb: 2 }}>
+        <Stack direction="row" sx={{ alignItems: "center", gap: 1, px: 2.5, py: 1.5, borderBottom: "1px solid #f0f0f0", bgcolor: "#fafafa" }}>
+          <ChatBubbleOutlineOutlinedIcon sx={{ fontSize: 15, color: "primary.main" }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            구매 내역
+            <Typography component="span" variant="caption" sx={{ color: "text.secondary", ml: 1 }}>({comments.length}건)</Typography>
+          </Typography>
+        </Stack>
+
+        {comments.length === 0 ? (
+          <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 4 }}>
+            등록된 구매 내역이 없습니다
+          </Typography>
+        ) : (
+          <Stack divider={<Divider />}>
+            {comments.map((c) => (
+              <Box key={c.id}>
+                {/* 원댓글 */}
+                <Stack direction="row" sx={{ alignItems: "flex-start", px: 2.5, py: 1.5, gap: 1.5 }}>
+                  <Avatar sx={{ width: 30, height: 30, bgcolor: "#e3f2fd", flexShrink: 0 }}>
+                    <PersonIcon sx={{ fontSize: 16, color: "#1976d2" }} />
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.3, flexWrap: "wrap" }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
+                      <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
+                        sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
+                      <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>{formatDT(c.createdAt)}</Typography>
+                    </Stack>
+                    {c.content && (
+                      <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13 }}>{c.content}</Typography>
+                    )}
+                  </Box>
+                </Stack>
+
+                {/* 관리자 답글 */}
+                {c.replies && c.replies.length > 0 && (
+                  <Stack sx={{ ml: { xs: 5, sm: 6 }, mr: 2.5, mb: 1.5 }} spacing={0.5}>
+                    {c.replies.map((r) => (
+                      <Stack key={r.id} direction="row" sx={{ alignItems: "flex-start", gap: 1, p: 1.5, bgcolor: "#f0f4ff", borderRadius: 2, border: "1px solid #c5cae9" }}>
+                        <Avatar sx={{ width: 24, height: 24, bgcolor: "#1a237e", flexShrink: 0 }}>
+                          <PersonIcon sx={{ fontSize: 13, color: "#fff" }} />
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Stack direction="row" sx={{ alignItems: "center", gap: 0.75, mb: 0.3 }}>
+                            <Chip label="관리자" size="small" sx={{ bgcolor: "#1a237e", color: "#fff", fontWeight: 700, fontSize: 10, height: 18, "& .MuiChip-label": { px: 0.75 } }} />
+                            <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>{formatDT(r.createdAt)}</Typography>
+                          </Stack>
+                          <Typography variant="body2" sx={{ fontSize: 13 }}>{r.content}</Typography>
+                        </Box>
+                      </Stack>
+                    ))}
+                  </Stack>
+                )}
+              </Box>
+            ))}
+          </Stack>
+        )}
+      </Paper>
 
       {/* 하단 고정 버튼 */}
       <Box sx={{
@@ -224,23 +276,15 @@ export default function ProductDetailPage() {
         p: { xs: 2, sm: "16px max(16px, calc(50% - 284px))" },
         display: "flex", gap: 1.5,
       }}>
-        <Button
-          variant="outlined"
-          size="large"
-          onClick={handleAddToCart}
-          disabled={product.stock === 0}
+        <Button variant="outlined" size="large" onClick={handleAddToCart} disabled={product.stock === 0}
           startIcon={<ShoppingCartIcon />}
-          sx={{ flex: 1, py: 1.6, borderRadius: 2, fontWeight: 700, fontSize: 15, borderColor: "#1976d2" }}
-        >
+          sx={{ flex: 1, py: 1.6, borderRadius: 2, fontWeight: 700, fontSize: 15, borderColor: "#1976d2" }}>
           장바구니 담기
         </Button>
-        <Button
-          variant="contained"
-          size="large"
+        <Button variant="contained" size="large"
           onClick={() => { handleAddToCart(); router.push("/shop/cart"); }}
           disabled={product.stock === 0}
-          sx={{ flex: 1, py: 1.6, borderRadius: 2, fontWeight: 700, fontSize: 15 }}
-        >
+          sx={{ flex: 1, py: 1.6, borderRadius: 2, fontWeight: 700, fontSize: 15 }}>
           {product.stock === 0 ? "품절" : "바로 구매"}
         </Button>
       </Box>
