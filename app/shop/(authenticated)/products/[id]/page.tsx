@@ -10,6 +10,8 @@ import RemoveIcon from "@mui/icons-material/Remove";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ImageIcon from "@mui/icons-material/Image";
+import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
+import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import { useCart } from "@/components/shop/CartContext";
 
 interface Product {
@@ -17,6 +19,7 @@ interface Product {
   price: number; salePrice: number | null; unit: string; minQty: number; maxQty: number | null;
   stock: number; imageUrl: string | null; images: string[];
   isActive: boolean; category: { name: string } | null;
+  pickupStartAt: string | null; groupBuyEndAt: string | null;
 }
 
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
@@ -149,6 +152,32 @@ export default function ProductDetailPage() {
         <Typography variant="caption" sx={{ color: "text.secondary" }}>
           재고 {product.stock}{product.unit}
         </Typography>
+
+        {(product.pickupStartAt || product.groupBuyEndAt) && (
+          <>
+            <Divider sx={{ my: 1.5 }} />
+            <Stack spacing={0.75}>
+              {product.pickupStartAt && (
+                <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+                  <LocalShippingOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>픽업 시작일</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "primary.main" }}>
+                    {new Date(product.pickupStartAt).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
+                  </Typography>
+                </Stack>
+              )}
+              {product.groupBuyEndAt && (
+                <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+                  <CalendarMonthOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>공구 마감일</Typography>
+                  <Typography variant="caption" sx={{ fontWeight: 700, color: "error.main" }}>
+                    {new Date(product.groupBuyEndAt).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" })}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          </>
+        )}
       </Paper>
 
       {/* 수량 선택 */}

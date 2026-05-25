@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, factoryIds = [], price, groupBuyStartAt, groupBuyEndAt, ...rest } = body;
+  const { name, factoryIds = [], price, groupBuyStartAt, groupBuyEndAt, pickupStartAt, ...rest } = body;
 
   const primaryFactoryId = factoryIds[0] || rest.factoryId;
   if (!name || !primaryFactoryId || !price) {
@@ -53,6 +53,7 @@ export async function POST(req: NextRequest) {
         price,
         groupBuyStartAt: groupBuyStartAt ? new Date(groupBuyStartAt) : null,
         groupBuyEndAt: groupBuyEndAt ? new Date(groupBuyEndAt) : null,
+        pickupStartAt: pickupStartAt ? new Date(pickupStartAt) : null,
         ...rest,
       },
     });

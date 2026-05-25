@@ -98,6 +98,7 @@ model Product {
   factoryIds      String[]
   groupBuyStartAt DateTime?
   groupBuyEndAt   DateTime?
+  pickupStartAt   DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

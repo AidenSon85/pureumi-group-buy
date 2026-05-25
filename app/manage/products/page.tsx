@@ -37,6 +37,7 @@ interface Product {
   category: Category | null;
   description: string | null; content: string | null;
   groupBuyStartAt: string | null; groupBuyEndAt: string | null;
+  pickupStartAt: string | null;
   createdAt: string;
 }
 
@@ -46,6 +47,7 @@ const emptyForm = () => ({
   factoryIds: [] as string[], categoryId: "",
   groupBuyStartAt: null as Date | null,
   groupBuyEndAt: null as Date | null,
+  pickupStartAt: null as Date | null,
 });
 
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
@@ -125,6 +127,7 @@ export default function ProductsPage() {
       categoryId: p.category?.id || "",
       groupBuyStartAt: p.groupBuyStartAt ? new Date(p.groupBuyStartAt) : null,
       groupBuyEndAt: p.groupBuyEndAt ? new Date(p.groupBuyEndAt) : null,
+      pickupStartAt: p.pickupStartAt ? new Date(p.pickupStartAt) : null,
     });
     setError(""); setDrawerOpen(true);
   };
@@ -202,6 +205,7 @@ export default function ProductsPage() {
       categoryId: form.categoryId || null,
       groupBuyStartAt: form.groupBuyStartAt ? form.groupBuyStartAt.toISOString() : null,
       groupBuyEndAt: form.groupBuyEndAt ? form.groupBuyEndAt.toISOString() : null,
+      pickupStartAt: form.pickupStartAt ? form.pickupStartAt.toISOString() : null,
     };
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     setSaving(false);
@@ -568,6 +572,27 @@ export default function ProductsPage() {
                 일정 초기화
               </Button>
             )}
+
+            <Divider sx={{ my: 3 }} />
+
+            {/* 픽업 일정 */}
+            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "primary.main", mb: 1.5 }}>픽업 일정</Typography>
+            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5 }}>
+              고객이 제품을 픽업할 수 있는 시작일을 설정합니다.
+            </Typography>
+            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+              <DatePicker
+                label="픽업 시작일"
+                value={form.pickupStartAt}
+                onChange={(v) => setForm({ ...form, pickupStartAt: v })}
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+              {form.pickupStartAt && (
+                <Button size="small" variant="text" onClick={() => setForm({ ...form, pickupStartAt: null })}>
+                  초기화
+                </Button>
+              )}
+            </Stack>
 
             <Divider sx={{ my: 3 }} />
 

@@ -20,7 +20,7 @@ interface Product {
   id: string; name: string; description: string | null; content: string | null;
   price: number; salePrice: number | null; unit: string; stock: number;
   imageUrl: string | null; images: string[]; isActive: boolean;
-  factoryIds: string[]; groupBuyStartAt: string | null; groupBuyEndAt: string | null;
+  factoryIds: string[]; groupBuyStartAt: string | null; groupBuyEndAt: string | null; pickupStartAt: string | null;
   factory: { id: string; name: string };
   category: { id: string; name: string } | null;
   createdAt: string;
@@ -175,6 +175,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             <Typography variant="body2" sx={{ fontWeight: 600, color: "primary.main" }}>
               {formatDate(product.groupBuyStartAt)}
               {product.groupBuyEndAt && ` ~ ${formatDate(product.groupBuyEndAt)}`}
+            </Typography>
+          </InfoRow>
+        )}
+
+        {product.pickupStartAt && (
+          <InfoRow icon={<LocalShippingOutlinedIcon sx={{ fontSize: 14 }} />} label="픽업시작">
+            <Typography variant="body2" sx={{ fontWeight: 600, color: "success.main" }}>
+              {formatDate(product.pickupStartAt)} 부터 픽업 가능
             </Typography>
           </InfoRow>
         )}
