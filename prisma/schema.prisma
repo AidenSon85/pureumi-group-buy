@@ -78,6 +78,9 @@ model ProductComment {
   parentId     String?
   parent       ProductComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies      ProductComment[] @relation("CommentReplies")
+
+  userId       String?
+  orderId      String?
 }
 
 model Product {

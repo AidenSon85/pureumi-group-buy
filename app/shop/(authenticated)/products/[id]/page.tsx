@@ -23,7 +23,8 @@ interface Product {
 }
 interface Comment {
   id: string; name: string; phoneDigits: string; content: string | null;
-  isAdminReply: boolean; createdAt: string; replies?: Comment[];
+  isAdminReply: boolean; createdAt: string; userId: string | null; orderId: string | null;
+  replies?: Comment[];
 }
 
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
@@ -37,11 +38,13 @@ export default function ProductDetailPage() {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [phoneDigits, setPhoneDigits] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [ordering, setOrdering] = useState(false);
+  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
@@ -57,6 +60,7 @@ export default function ProductDetailPage() {
         const digits = u.phone.replace(/\D/g, "").slice(-4);
         setPhoneDigits(digits);
       }
+      if (u?.id) setCurrentUserId(u.id);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [id]);
@@ -87,26 +91,31 @@ export default function ProductDetailPage() {
     setPhoneError("");
     setOrdering(true);
     try {
-      const [orderRes] = await Promise.all([
-        fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items: [{ productId: product.id, quantity: qty }] }),
-        }),
-      ]);
+      const meRes = await fetch("/api/users/me").then((r) => r.json());
+      const userName = meRes?.name || "고객";
+      const uid = meRes?.id || null;
+
+      const orderRes = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [{ productId: product.id, quantity: qty }] }),
+      });
       if (!orderRes.ok) {
         const d = await orderRes.json();
         setSnack({ open: true, msg: d.error || "주문 실패", severity: "error" });
         return;
       }
+      const order = await orderRes.json();
 
       await fetch(`/api/products/${id}/comments`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: await fetch("/api/users/me").then((r) => r.json()).then((u) => u.name || "고객"),
+          name: userName,
           phoneDigits: cleaned,
           content: `${product.name} - ${qty}${product.unit}`,
+          userId: uid,
+          orderId: order.id,
         }),
       });
 
@@ -122,6 +131,24 @@ export default function ProductDetailPage() {
       setTimeout(() => router.push("/shop/orders"), 1200);
     } finally {
       setOrdering(false);
+    }
+  };
+
+  const handleCancelOrder = async (comment: Comment) => {
+    if (!comment.orderId) return;
+    setCancellingId(comment.id);
+    try {
+      const res = await fetch(`/api/shop/orders/${comment.orderId}`, { method: "PATCH" });
+      if (res.ok) {
+        await fetch(`/api/products/${id}/comments?commentId=${comment.id}`, { method: "DELETE" });
+        setComments((prev) => prev.filter((c) => c.id !== comment.id));
+        setSnack({ open: true, msg: "주문이 취소되었습니다", severity: "success" });
+      } else {
+        const d = await res.json();
+        setSnack({ open: true, msg: d.error || "취소 실패", severity: "error" });
+      }
+    } finally {
+      setCancellingId(null);
     }
   };
 
@@ -287,6 +314,16 @@ export default function ProductDetailPage() {
                     </Stack>
                     {c.content && (
                       <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13 }}>{c.content}</Typography>
+                    )}
+                    {currentUserId && c.userId === currentUserId && c.orderId && (
+                      <Button
+                        size="small" color="error" variant="text"
+                        onClick={() => handleCancelOrder(c)}
+                        disabled={cancellingId === c.id}
+                        sx={{ mt: 0.5, px: 0, minWidth: 0, fontSize: 12 }}
+                      >
+                        {cancellingId === c.id ? "취소 중..." : "주문 취소"}
+                      </Button>
                     )}
                   </Box>
                 </Stack>
