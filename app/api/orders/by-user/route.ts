@@ -5,6 +5,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const factoryId = searchParams.get("factoryId") || "";
   const search = searchParams.get("search") || "";
+  const productName = searchParams.get("productName") || "";
   const startDate = searchParams.get("startDate") || "";
   const endDate = searchParams.get("endDate") || "";
 
@@ -17,6 +18,9 @@ export async function GET(req: NextRequest) {
   }
   if (search) {
     where.user = { OR: [{ name: { contains: search, mode: "insensitive" } }, { email: { contains: search, mode: "insensitive" } }] };
+  }
+  if (productName) {
+    where.items = { some: { product: { name: { contains: productName, mode: "insensitive" } } } };
   }
 
   const orders = await prisma.order.findMany({

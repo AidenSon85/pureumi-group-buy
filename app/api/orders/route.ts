@@ -9,12 +9,25 @@ export async function GET(req: NextRequest) {
   const limit = Number(searchParams.get("limit") || 20);
   const search = searchParams.get("search") || "";
   const factoryId = searchParams.get("factoryId") || "";
-  const status = searchParams.get("status") || "";
+  const statuses = searchParams.get("statuses") || "";
+  const productName = searchParams.get("productName") || "";
+  const customerName = searchParams.get("customerName") || "";
+  const startDate = searchParams.get("startDate") || "";
+  const endDate = searchParams.get("endDate") || "";
+  const userId = searchParams.get("userId") || "";
 
   const where: any = {};
-  if (search) where.OR = [{ orderNo: { contains: search } }, { user: { name: { contains: search, mode: "insensitive" } } }];
+  if (search) where.orderNo = { contains: search };
   if (factoryId) where.factoryId = factoryId;
-  if (status) where.status = status;
+  if (userId) where.userId = userId;
+  if (statuses) where.status = { in: statuses.split(",") };
+  if (productName) where.items = { some: { product: { name: { contains: productName, mode: "insensitive" } } } };
+  if (customerName) where.user = { OR: [{ name: { contains: customerName, mode: "insensitive" } }, { email: { contains: customerName, mode: "insensitive" } }] };
+  if (startDate || endDate) {
+    where.orderedAt = {};
+    if (startDate) where.orderedAt.gte = new Date(startDate);
+    if (endDate) where.orderedAt.lte = new Date(endDate + "T23:59:59.999Z");
+  }
 
   const [orders, total] = await Promise.all([
     prisma.order.findMany({

@@ -6,14 +6,18 @@ export async function GET(req: NextRequest) {
   const factoryId = searchParams.get("factoryId") || "";
   const startDate = searchParams.get("startDate") || "";
   const endDate = searchParams.get("endDate") || "";
+  const productName = searchParams.get("productName") || "";
 
   const where: any = {};
-  if (factoryId) where.order = { factoryId };
+  const orderWhere: any = {};
+  if (factoryId) orderWhere.factoryId = factoryId;
   if (startDate || endDate) {
-    where.order = { ...where.order, orderedAt: {} };
-    if (startDate) where.order.orderedAt.gte = new Date(startDate);
-    if (endDate) where.order.orderedAt.lte = new Date(endDate + "T23:59:59");
+    orderWhere.orderedAt = {};
+    if (startDate) orderWhere.orderedAt.gte = new Date(startDate);
+    if (endDate) orderWhere.orderedAt.lte = new Date(endDate + "T23:59:59");
   }
+  if (Object.keys(orderWhere).length > 0) where.order = orderWhere;
+  if (productName) where.product = { name: { contains: productName, mode: "insensitive" } };
 
   const items = await prisma.orderItem.findMany({
     where,
