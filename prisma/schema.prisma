@@ -63,6 +63,17 @@ model Category {
   products    Product[]
 }
 
+model ProductComment {
+  id          String   @id @default(cuid())
+  name        String
+  phoneDigits String
+  content     String?
+  createdAt   DateTime @default(now())
+
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+}
+
 model Product {
   id              String    @id @default(cuid())
   name            String
@@ -91,6 +102,7 @@ model Product {
   category    Category? @relation(fields: [categoryId], references: [id])
 
   orderItems  OrderItem[]
+  comments    ProductComment[]
 }
 
 model Order {

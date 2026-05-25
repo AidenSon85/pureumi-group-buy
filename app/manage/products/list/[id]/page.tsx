@@ -3,7 +3,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box, Typography, Chip, Stack, CircularProgress, Button,
-  Divider, IconButton, Tab, Tabs, Paper, Grid,
+  Divider, IconButton, Tab, Tabs, Paper, TextField, Avatar,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EditIcon from "@mui/icons-material/Edit";
@@ -12,6 +12,9 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import StorefrontOutlinedIcon from "@mui/icons-material/StorefrontOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import InventoryOutlinedIcon from "@mui/icons-material/InventoryOutlined";
+import CommentIcon from "@mui/icons-material/ChatBubbleOutline";
+import DeleteIcon from "@mui/icons-material/Delete";
+import PersonIcon from "@mui/icons-material/Person";
 
 interface Product {
   id: string; name: string; description: string | null; content: string | null;
@@ -23,9 +26,13 @@ interface Product {
   createdAt: string;
 }
 interface Factory { id: string; name: string }
+interface Comment {
+  id: string; name: string; phoneDigits: string; content: string | null; createdAt: string;
+}
 
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
 const formatDate = (s: string) => new Date(s).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
+const formatDateTime = (s: string) => new Date(s).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
@@ -47,14 +54,49 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState(0);
 
+  // 댓글
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [commentForm, setCommentForm] = useState({ name: "", phoneDigits: "", content: "" });
+  const [commentSaving, setCommentSaving] = useState(false);
+  const [commentError, setCommentError] = useState("");
+
   useEffect(() => {
     Promise.all([
       fetch(`/api/products/${id}`).then((r) => r.json()),
       fetch("/api/factories").then((r) => r.json()),
-    ]).then(([p, f]) => {
-      setProduct(p); setFactories(f); setLoading(false);
+      fetch(`/api/products/${id}/comments`).then((r) => r.json()),
+    ]).then(([p, f, c]) => {
+      setProduct(p); setFactories(f); setComments(c); setLoading(false);
     }).catch(() => setLoading(false));
   }, [id]);
+
+  const loadComments = () =>
+    fetch(`/api/products/${id}/comments`).then((r) => r.json()).then(setComments);
+
+  const handleCommentSubmit = async () => {
+    setCommentError("");
+    if (!commentForm.name.trim()) { setCommentError("이름을 입력해주세요"); return; }
+    if (!/^\d{4}$/.test(commentForm.phoneDigits.trim())) { setCommentError("전화번호 뒷 4자리를 숫자로 입력해주세요"); return; }
+    setCommentSaving(true);
+    const res = await fetch(`/api/products/${id}/comments`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(commentForm),
+    });
+    setCommentSaving(false);
+    if (res.ok) {
+      setCommentForm({ name: "", phoneDigits: "", content: "" });
+      loadComments();
+    } else {
+      const d = await res.json();
+      setCommentError(d.error || "오류가 발생했습니다");
+    }
+  };
+
+  const handleCommentDelete = async (commentId: string) => {
+    await fetch(`/api/products/${id}/comments?commentId=${commentId}`, { method: "DELETE" });
+    loadComments();
+  };
 
   if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 12 }}><CircularProgress /></Box>;
   if (!product) return (
@@ -88,22 +130,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </Button>
       </Stack>
 
-      {/* ── 제품 정보 카드 ── */}
+      {/* 제품 정보 카드 */}
       <Paper elevation={0} sx={{ border: "1px solid #e0e0e0", borderRadius: 2, p: { xs: 2, md: 2.5 }, mb: 2 }}>
-
-        {/* 상태 + 카테고리 */}
         <Stack direction="row" spacing={0.75} sx={{ mb: 1 }}>
-          <Chip label={product.isActive ? "판매중" : "판매중지"} size="small"
+          <Chip label={product.isActive ? "판매중" : "마감"} size="small"
             color={product.isActive ? "success" : "default"} />
           {product.category && <Chip label={product.category.name} size="small" variant="outlined" />}
         </Stack>
 
-        {/* 제품명 */}
         <Typography variant="h6" sx={{ fontWeight: 700, lineHeight: 1.4, mb: 1.5, wordBreak: "keep-all" }}>
           {product.name}
         </Typography>
 
-        {/* 가격 */}
         {product.salePrice ? (
           <Stack direction="row" sx={{ alignItems: "baseline", gap: 1, mb: 0.5 }}>
             <Typography sx={{ fontWeight: 800, fontSize: 22, color: "#e53935" }}>
@@ -122,7 +160,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
         <Divider sx={{ mb: 1.5 }} />
 
-        {/* 정보 행 */}
         <InfoRow icon={<StorefrontOutlinedIcon sx={{ fontSize: 14 }} />} label="소속 매장">
           <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.5 }}>
             {factoryNames.map((name, i) => (
@@ -153,8 +190,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
         </InfoRow>
       </Paper>
 
-      {/* ── 상품 설명 / 상세 내용 탭 ── */}
-      <Paper elevation={0} sx={{ border: "1px solid #e0e0e0", borderRadius: 2, overflow: "hidden" }}>
+      {/* 상품 설명 / 상세 내용 탭 */}
+      <Paper elevation={0} sx={{ border: "1px solid #e0e0e0", borderRadius: 2, overflow: "hidden", mb: 2 }}>
         <Tabs value={tab} onChange={(_, v) => setTab(v)}
           sx={{ borderBottom: "1px solid #e0e0e0", "& .MuiTab-root": { fontWeight: 600, fontSize: 13 } }}>
           <Tab label="상품 소개" />
@@ -172,7 +209,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
           )}
         </Box>
 
-        {/* ── 이미지 목록 (설명 아래) ── */}
         {allImages.length > 0 && (
           <>
             <Divider />
@@ -196,6 +232,91 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
             </Box>
           </>
         )}
+      </Paper>
+
+      {/* 구매 등록 댓글 섹션 */}
+      <Paper elevation={0} sx={{ border: "1px solid #e0e0e0", borderRadius: 2, overflow: "hidden", mb: 2 }}>
+        <Stack direction="row" sx={{ alignItems: "center", gap: 1, px: 2.5, py: 1.5, borderBottom: "1px solid #e0e0e0", bgcolor: "#fafafa" }}>
+          <CommentIcon sx={{ fontSize: 16, color: "primary.main" }} />
+          <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+            구매 등록
+            <Typography component="span" variant="caption" sx={{ color: "text.secondary", ml: 1 }}>
+              ({comments.length}건)
+            </Typography>
+          </Typography>
+        </Stack>
+
+        {/* 등록 폼 */}
+        <Box sx={{ p: { xs: 2, md: 2.5 }, borderBottom: "1px solid #f0f0f0" }}>
+          <Stack spacing={1.5}>
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
+              <TextField
+                size="small" label="이름 *" placeholder="홍길동"
+                value={commentForm.name}
+                onChange={(e) => setCommentForm({ ...commentForm, name: e.target.value })}
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                size="small" label="전화번호 뒷 4자리 *" placeholder="1234"
+                value={commentForm.phoneDigits}
+                onChange={(e) => setCommentForm({ ...commentForm, phoneDigits: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                inputProps={{ maxLength: 4 }}
+                sx={{ flex: 1 }}
+              />
+            </Stack>
+            <TextField
+              size="small" label="메모 (선택)" placeholder="수량, 요청사항 등"
+              value={commentForm.content}
+              onChange={(e) => setCommentForm({ ...commentForm, content: e.target.value })}
+              multiline rows={2} fullWidth
+            />
+            {commentError && (
+              <Typography variant="caption" sx={{ color: "error.main" }}>{commentError}</Typography>
+            )}
+            <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Button variant="contained" size="small" onClick={handleCommentSubmit} disabled={commentSaving}
+                sx={{ px: 3, fontWeight: 600 }}>
+                {commentSaving ? <CircularProgress size={16} /> : "구매 등록"}
+              </Button>
+            </Box>
+          </Stack>
+        </Box>
+
+        {/* 댓글 목록 */}
+        <Box>
+          {comments.length === 0 ? (
+            <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", py: 4 }}>
+              등록된 구매 내역이 없습니다
+            </Typography>
+          ) : (
+            <Stack divider={<Divider />}>
+              {comments.map((c) => (
+                <Stack key={c.id} direction="row" sx={{ alignItems: "flex-start", px: 2.5, py: 1.5, gap: 1.5 }}>
+                  <Avatar sx={{ width: 32, height: 32, bgcolor: "#e3f2fd", flexShrink: 0 }}>
+                    <PersonIcon sx={{ fontSize: 18, color: "#1976d2" }} />
+                  </Avatar>
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.3 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
+                      <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
+                        sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
+                      <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>
+                        {formatDateTime(c.createdAt)}
+                      </Typography>
+                    </Stack>
+                    {c.content && (
+                      <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13 }}>{c.content}</Typography>
+                    )}
+                  </Box>
+                  <IconButton size="small" color="error" onClick={() => handleCommentDelete(c.id)}
+                    sx={{ flexShrink: 0, opacity: 0.6, "&:hover": { opacity: 1 } }}>
+                    <DeleteIcon sx={{ fontSize: 15 }} />
+                  </IconButton>
+                </Stack>
+              ))}
+            </Stack>
+          )}
+        </Box>
       </Paper>
 
       <Typography variant="caption" sx={{ color: "text.disabled", display: "block", mt: 2 }}>
