@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import {
   Box, Grid, Paper, Typography, FormControl, InputLabel, Select, MenuItem,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
@@ -23,6 +24,10 @@ interface Summary { totalSales: number; totalOrders: number; totalVisitors: numb
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const isManager = (session?.user as any)?.role === "MANAGER";
+  const myFactoryId = (session?.user as any)?.factoryId as string | undefined;
+
   const [factories, setFactories] = useState<Factory[]>([]);
   const [selectedFactory, setSelectedFactory] = useState<string>("");
   const [stats, setStats] = useState<DailyStat[]>([]);
@@ -31,11 +36,16 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (status === "loading") return;
     fetch("/api/factories").then((r) => r.json()).then((data) => {
       setFactories(data);
-      if (data.length > 0) setSelectedFactory(data[0].id);
+      if (isManager && myFactoryId) {
+        setSelectedFactory(myFactoryId);
+      } else if (data.length > 0) {
+        setSelectedFactory(data[0].id);
+      }
     });
-  }, []);
+  }, [status, isManager, myFactoryId]);
 
   useEffect(() => {
     if (!selectedFactory) return;
@@ -74,7 +84,7 @@ export default function DashboardPage() {
         <Typography variant="h5" sx={{ fontWeight: 700 }}>대시보드</Typography>
         <FormControl size="small" sx={{ minWidth: 200, bgcolor: "#fff", borderRadius: 2 }}>
           <InputLabel>매장 선택</InputLabel>
-          <Select value={selectedFactory} label="매장 선택" onChange={(e) => setSelectedFactory(e.target.value)}>
+          <Select value={selectedFactory} label="매장 선택" onChange={(e) => !isManager && setSelectedFactory(e.target.value)} disabled={isManager}>
             {factories.map((f) => (
               <MenuItem key={f.id} value={f.id}>{f.name} ({f.code})</MenuItem>
             ))}

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import {
   Box, Paper, Typography, Button, Grid, Card, CardContent, CardMedia,
   Chip, FormControl, InputLabel, Select, MenuItem, TextField, InputAdornment,
@@ -21,6 +22,10 @@ const formatWon = (n: number) => `₩${n.toLocaleString()}`;
 const PER_PAGE = 12;
 
 export default function ProductListPage() {
+  const { data: session } = useSession();
+  const isManager = (session?.user as any)?.role === "MANAGER";
+  const myFactoryId = (session?.user as any)?.factoryId as string | undefined;
+
   const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
@@ -43,6 +48,7 @@ export default function ProductListPage() {
   }, [page, search, factoryFilter, statusFilter]);
 
   useEffect(() => { fetch("/api/factories").then((r) => r.json()).then(setFactories); }, []);
+  useEffect(() => { if (isManager && myFactoryId) setFactoryFilter(myFactoryId); }, [isManager, myFactoryId]);
   useEffect(() => { load(); }, [load]);
 
   return (
@@ -67,13 +73,15 @@ export default function ProductListPage() {
             }}
             sx={{ width: 280 }}
           />
-          <FormControl size="small" sx={{ minWidth: 180 }}>
-            <InputLabel>매장</InputLabel>
-            <Select value={factoryFilter} label="매장" onChange={(e) => { setFactoryFilter(e.target.value); setPage(1); }}>
-              <MenuItem value="">전체</MenuItem>
-              {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
-            </Select>
-          </FormControl>
+          {!isManager && (
+            <FormControl size="small" sx={{ minWidth: 180 }}>
+              <InputLabel>매장</InputLabel>
+              <Select value={factoryFilter} label="매장" onChange={(e) => { setFactoryFilter(e.target.value); setPage(1); }}>
+                <MenuItem value="">전체</MenuItem>
+                {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+          )}
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>상태</InputLabel>
             <Select value={statusFilter} label="상태" onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import {
   Box, Paper, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Chip, Stack, CircularProgress, FormControl,
@@ -33,6 +34,10 @@ const formatWon = (n: number) => `₩${n.toLocaleString()}`;
 const formatDate = (s: string) => new Date(s).toLocaleDateString("ko-KR", { year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 export default function OrdersPage() {
+  const { data: session } = useSession();
+  const isManager = (session?.user as any)?.role === "MANAGER";
+  const myFactoryId = (session?.user as any)?.factoryId as string | undefined;
+
   const [orders, setOrders] = useState<Order[]>([]);
   const [total, setTotal] = useState(0);
   const [factories, setFactories] = useState<Factory[]>([]);
@@ -54,6 +59,7 @@ export default function OrdersPage() {
   }, [page, search, factoryFilter, statusFilter]);
 
   useEffect(() => { fetch("/api/factories").then((r) => r.json()).then(setFactories); }, []);
+  useEffect(() => { if (isManager && myFactoryId) setFactoryFilter(myFactoryId); }, [isManager, myFactoryId]);
   useEffect(() => { load(); }, [load]);
 
   const handleStatusChange = async () => {
@@ -79,13 +85,15 @@ export default function OrdersPage() {
             }}
             sx={{ width: 280 }}
           />
-          <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel>매장</InputLabel>
-            <Select value={factoryFilter} label="매장" onChange={(e) => { setFactoryFilter(e.target.value); setPage(0); }}>
-              <MenuItem value="">전체</MenuItem>
-              {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
-            </Select>
-          </FormControl>
+          {!isManager && (
+            <FormControl size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>매장</InputLabel>
+              <Select value={factoryFilter} label="매장" onChange={(e) => { setFactoryFilter(e.target.value); setPage(0); }}>
+                <MenuItem value="">전체</MenuItem>
+                {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
+              </Select>
+            </FormControl>
+          )}
           <FormControl size="small" sx={{ minWidth: 120 }}>
             <InputLabel>상태</InputLabel>
             <Select value={statusFilter} label="상태" onChange={(e) => { setStatusFilter(e.target.value); setPage(0); }}>

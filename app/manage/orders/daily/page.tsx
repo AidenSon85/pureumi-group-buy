@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import {
   Box, Paper, Typography, Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Stack, CircularProgress, FormControl,
@@ -16,6 +17,10 @@ interface Factory { id: string; name: string }
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
 
 export default function DailyOrdersPage() {
+  const { data: session } = useSession();
+  const isManager = (session?.user as any)?.role === "MANAGER";
+  const myFactoryId = (session?.user as any)?.factoryId as string | undefined;
+
   const [data, setData] = useState<DailyOrder[]>([]);
   const [factories, setFactories] = useState<Factory[]>([]);
   const [factoryFilter, setFactoryFilter] = useState("");
@@ -36,6 +41,7 @@ export default function DailyOrdersPage() {
   }, [factoryFilter, startDate, endDate]);
 
   useEffect(() => { fetch("/api/factories").then((r) => r.json()).then(setFactories); }, []);
+  useEffect(() => { if (isManager && myFactoryId) setFactoryFilter(myFactoryId); }, [isManager, myFactoryId]);
   useEffect(() => { load(); }, [load]);
 
   const totals = data.reduce((a, d) => ({ orders: a.orders + d.orderCount, amount: a.amount + d.totalAmount }), { orders: 0, amount: 0 });
@@ -50,13 +56,15 @@ export default function DailyOrdersPage() {
 
         <Paper elevation={0} sx={{ p: 2, mb: 2, border: "1px solid #e0e0e0" }}>
           <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
-            <FormControl size="small" sx={{ minWidth: 160 }}>
-              <InputLabel>매장</InputLabel>
-              <Select value={factoryFilter} label="매장" onChange={(e) => setFactoryFilter(e.target.value)}>
-                <MenuItem value="">전체</MenuItem>
-                {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
-              </Select>
-            </FormControl>
+            {!isManager && (
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <InputLabel>매장</InputLabel>
+                <Select value={factoryFilter} label="매장" onChange={(e) => setFactoryFilter(e.target.value)}>
+                  <MenuItem value="">전체</MenuItem>
+                  {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
+                </Select>
+              </FormControl>
+            )}
             <DatePicker label="시작일" value={startDate} onChange={setStartDate} slotProps={{ textField: { size: "small" } }} />
             <DatePicker label="종료일" value={endDate} onChange={setEndDate} slotProps={{ textField: { size: "small" } }} />
           </Stack>
