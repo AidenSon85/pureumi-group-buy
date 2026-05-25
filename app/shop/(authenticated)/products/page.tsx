@@ -211,14 +211,18 @@ export default function ShopProductsPage() {
                           {p.description}
                         </Typography>
                       )}
-                      <Box sx={{ mt: 1 }}>
+                      <Box sx={{ mt: 1.5 }}>
                         {p.salePrice ? (
-                          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                            <Typography sx={{ fontWeight: 800, color: "error.main", fontSize: 16 }}>{formatWon(p.salePrice)}</Typography>
-                            <Typography variant="caption" sx={{ color: "text.disabled", textDecoration: "line-through" }}>{formatWon(p.price)}</Typography>
-                          </Stack>
+                          <>
+                            <Typography variant="caption" sx={{ color: "text.disabled", textDecoration: "line-through", display: "block" }}>{formatWon(p.price)}</Typography>
+                            <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                              <Typography sx={{ fontWeight: 900, color: "error.main", fontSize: 22, lineHeight: 1.2 }}>{formatWon(p.salePrice)}</Typography>
+                              <Chip label={`${Math.round((1 - p.salePrice / p.price) * 100)}%`} size="small"
+                                sx={{ bgcolor: "#e53935", color: "#fff", fontWeight: 800, fontSize: 11, height: 20 }} />
+                            </Stack>
+                          </>
                         ) : (
-                          <Typography sx={{ fontWeight: 700, color: "primary.main", fontSize: 16 }}>{formatWon(p.price)}</Typography>
+                          <Typography sx={{ fontWeight: 900, color: "primary.main", fontSize: 22, lineHeight: 1.2 }}>{formatWon(p.price)}</Typography>
                         )}
                         <Typography variant="caption" sx={{ color: p.stock < 10 && p.stock > 0 ? "warning.main" : "text.secondary" }}>
                           재고 {p.stock}{p.unit}{p.stock < 10 && p.stock > 0 && " (소량)"}
