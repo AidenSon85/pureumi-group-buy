@@ -74,7 +74,7 @@ export default function FactoryLandingClient({
 
         <Divider sx={{ my: 3 }} />
         <Typography variant="caption" sx={{ color: "#8a7a5a", display: "block", textAlign: "center" }}>
-          PUREUMI 그룹구매
+          {factoryName} 공동구매
         </Typography>
       </Paper>
     </Box>
