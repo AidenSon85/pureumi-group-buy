@@ -61,6 +61,7 @@ export default function ProductsPage() {
   const [form, setForm] = useState(emptyForm());
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
   const [error, setError] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -108,32 +109,34 @@ export default function ProductsPage() {
   const handleImageUpload = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
     setUploading(true);
+    setUploadError("");
     const uploaded: string[] = [];
+    const failed: string[] = [];
+
     for (const file of Array.from(files)) {
       try {
-        // 서버에서 presigned URL 발급
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileName: file.name, contentType: file.type }),
-        });
-        const { signedUrl, publicUrl, error } = await res.json();
-        if (error || !signedUrl) continue;
-
-        // 브라우저에서 Supabase에 직접 업로드 (서버 경유 없음 → 파일 크기 제한 없음)
-        const uploadRes = await fetch(signedUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type || "application/octet-stream" },
-          body: file,
-        });
-        if (uploadRes.ok) uploaded.push(publicUrl);
-      } catch { /* skip failed */ }
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        const d = await res.json();
+        if (!res.ok || !d.url) {
+          failed.push(file.name);
+        } else {
+          uploaded.push(d.url);
+        }
+      } catch {
+        failed.push(file.name);
+      }
     }
+
     if (uploaded.length > 0) {
       setForm((f) => {
         const newImages = [...f.images, ...uploaded];
         return { ...f, images: newImages, imageUrl: f.imageUrl || newImages[0] || "" };
       });
+    }
+    if (failed.length > 0) {
+      setUploadError(`업로드 실패: ${failed.join(", ")}`);
     }
     setUploading(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -343,6 +346,7 @@ export default function ProductsPage() {
 
           <Box sx={{ overflowY: "auto", height: "100%", px: 3, py: 2.5 }}>
             {error && <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError("")}>{error}</Alert>}
+            {uploadError && <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setUploadError("")}>{uploadError}</Alert>}
 
             {/* 기본 정보 */}
             <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "primary.main", mb: 1.5 }}>기본 정보</Typography>
@@ -453,7 +457,7 @@ export default function ProductsPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/*"
+              accept="image/jpeg,image/png,image/gif,image/webp,image/heic,image/heif"
               multiple
               style={{ display: "none" }}
               onChange={(e) => handleImageUpload(e.target.files)}

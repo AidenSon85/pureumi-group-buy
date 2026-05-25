@@ -9,19 +9,27 @@ const supabase = createClient(
 const BUCKET = "products";
 
 export async function POST(req: NextRequest) {
-  const { fileName, contentType } = await req.json();
-  if (!fileName) return NextResponse.json({ error: "파일명이 없습니다" }, { status: 400 });
+  const formData = await req.formData();
+  const file = formData.get("file") as File | null;
+  if (!file) return NextResponse.json({ error: "파일이 없습니다" }, { status: 400 });
 
-  const ext = fileName.split(".").pop()?.toLowerCase() || "jpg";
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+  const originalName = file.name || "image";
+  const ext = originalName.split(".").pop()?.toLowerCase() || "jpg";
+  const safeExt = ["jpg", "jpeg", "png", "gif", "webp", "heic", "heif"].includes(ext) ? ext : "jpg";
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2)}.${safeExt}`;
+
+  const contentType = file.type || "image/jpeg";
+  const buffer = Buffer.from(await file.arrayBuffer());
 
   const { data, error } = await supabase.storage
     .from(BUCKET)
-    .createSignedUploadUrl(path);
+    .upload(fileName, buffer, { contentType, upsert: false });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error("Supabase upload error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
-  const publicUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
-
-  return NextResponse.json({ signedUrl: data.signedUrl, publicUrl });
+  const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(data.path);
+  return NextResponse.json({ url: publicUrl });
 }
