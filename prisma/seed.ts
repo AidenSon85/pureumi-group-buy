@@ -72,7 +72,7 @@ async function main() {
   for (const p of productData) {
     const existing = await prisma.product.findFirst({ where: { name: p.name, factoryId: p.factoryId } });
     if (!existing) {
-      const created = await prisma.product.create({
+      const created: Awaited<ReturnType<typeof prisma.product.create>> = await prisma.product.create({
         data: { ...p, minQty: 1, sortOrder: products.length, description: `${p.name} 상품입니다.` },
       });
       products.push(created);

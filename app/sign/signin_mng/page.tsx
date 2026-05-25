@@ -41,14 +41,14 @@ export default function AdminSignInPage() {
         component="form"
         onSubmit={handleSubmit}
       >
-        <Stack alignItems="center" spacing={1} mb={4}>
+        <Stack sx={{ alignItems: "center", mb: 4 }} spacing={1}>
           <Box sx={{ bgcolor: "#1a237e", borderRadius: "50%", p: 1.5, mb: 1 }}>
             <AdminPanelSettingsIcon sx={{ fontSize: 36, color: "#fff" }} />
           </Box>
-          <Typography variant="h5" fontWeight={800} color="#1a237e">
+          <Typography variant="h5" sx={{ fontWeight: 800, color: "#1a237e" }}>
             PUREUMI 관리자
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
             관리자 계정으로 로그인하세요
           </Typography>
         </Stack>
@@ -63,8 +63,10 @@ export default function AdminSignInPage() {
             required
             value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
-            InputProps={{
-              startAdornment: <InputAdornment position="start"><EmailIcon color="action" /></InputAdornment>,
+            slotProps={{
+              input: {
+                startAdornment: <InputAdornment position="start"><EmailIcon color="action" /></InputAdornment>,
+              },
             }}
             autoComplete="email"
           />
@@ -75,15 +77,17 @@ export default function AdminSignInPage() {
             required
             value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
-            InputProps={{
-              startAdornment: <InputAdornment position="start"><LockIcon color="action" /></InputAdornment>,
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={() => setShowPw(!showPw)} edge="end" size="small">
-                    {showPw ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: <InputAdornment position="start"><LockIcon color="action" /></InputAdornment>,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={() => setShowPw(!showPw)} edge="end" size="small">
+                      {showPw ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              },
             }}
             autoComplete="current-password"
           />
@@ -100,7 +104,7 @@ export default function AdminSignInPage() {
         </Stack>
 
         <Divider sx={{ my: 3 }} />
-        <Typography variant="caption" color="text.secondary" display="block" textAlign="center">
+        <Typography variant="caption" sx={{ color: "text.secondary", display: "block", textAlign: "center" }}>
           PUREUMI 그룹구매 관리 시스템 v1.0
         </Typography>
       </Paper>

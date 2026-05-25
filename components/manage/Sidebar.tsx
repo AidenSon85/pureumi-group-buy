@@ -105,7 +105,7 @@ export default function Sidebar() {
       >
         {!collapsed && (
           <Box>
-            <Typography variant="subtitle1" fontWeight={700} color="#fff">
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#fff" }}>
               PUREUMI
             </Typography>
             <Typography variant="caption" color="rgba(255,255,255,0.6)">
@@ -126,7 +126,7 @@ export default function Sidebar() {
             {session.user.name?.[0]}
           </Avatar>
           <Box>
-            <Typography variant="body2" fontWeight={600} color="#fff">
+            <Typography variant="body2" sx={{ fontWeight: 600, color: "#fff" }}>
               {session.user.name}
             </Typography>
             <Typography variant="caption" color="rgba(255,255,255,0.6)">
@@ -166,7 +166,7 @@ export default function Sidebar() {
                     </ListItemIcon>
                     {!collapsed && (
                       <>
-                        <ListItemText primary={item.title} primaryTypographyProps={{ fontSize: 14 }} />
+                        <ListItemText primary={item.title} slotProps={{ primary: { style: { fontSize: 14 } } }} />
                         {expanded ? <ExpandLess /> : <ExpandMore />}
                       </>
                     )}
@@ -193,7 +193,7 @@ export default function Sidebar() {
                           <ListItemIcon sx={{ color: "inherit", minWidth: 36 }}>
                             {child.icon}
                           </ListItemIcon>
-                          <ListItemText primary={child.title} primaryTypographyProps={{ fontSize: 13 }} />
+                          <ListItemText primary={child.title} slotProps={{ primary: { style: { fontSize: 13 } } }} />
                         </ListItemButton>
                       ))}
                     </List>
@@ -228,7 +228,7 @@ export default function Sidebar() {
                   {item.icon}
                 </ListItemIcon>
                 {!collapsed && (
-                  <ListItemText primary={item.title} primaryTypographyProps={{ fontSize: 14 }} />
+                  <ListItemText primary={item.title} slotProps={{ primary: { style: { fontSize: 14 } } }} />
                 )}
               </ListItemButton>
             </Tooltip>

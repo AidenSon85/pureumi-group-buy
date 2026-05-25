@@ -18,7 +18,6 @@ export async function GET(req: NextRequest) {
       where, skip: page * limit, take: limit,
       orderBy: { createdAt: "desc" },
       include: { factory: { select: { id: true, name: true } } },
-      select: { id: true, email: true, name: true, phone: true, role: true, isActive: true, createdAt: true, factory: true },
     }),
     prisma.user.count({ where }),
   ]);

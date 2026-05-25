@@ -25,10 +25,10 @@ export default function Header() {
       }}
     >
       <Toolbar sx={{ justifyContent: "space-between" }}>
-        <Typography variant="h6" color="text.primary" fontWeight={700}>
+        <Typography variant="h6" sx={{ color: "text.primary", fontWeight: 700 }}>
           PUREUMI 관리자
         </Typography>
-        <Box display="flex" alignItems="center" gap={1}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
           <IconButton size="small">
             <NotificationsIcon sx={{ color: "#666" }} />
           </IconButton>
@@ -48,7 +48,7 @@ export default function Header() {
           >
             <MenuItem disabled>
               <Box>
-                <Typography variant="body2" fontWeight={600}>{session?.user?.name}</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>{session?.user?.name}</Typography>
                 <Typography variant="caption" color="text.secondary">{session?.user?.email}</Typography>
               </Box>
             </MenuItem>
