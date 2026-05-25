@@ -79,17 +79,6 @@ export default function ProductDetailPage() {
         </IconButton>
       </Stack>
 
-      {/* 대표 이미지 */}
-      {allImages.length === 0 ? (
-        <Box sx={{ borderRadius: 2, overflow: "hidden", bgcolor: "#f8f8f8", mb: 2, aspectRatio: "1/1", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <ImageIcon sx={{ fontSize: 96, color: "#ccc" }} />
-        </Box>
-      ) : (
-        <Box sx={{ mb: 2 }}>
-          <Box component="img" src={allImages[0]} alt={product.name}
-            sx={{ width: "100%", borderRadius: 2, display: "block" }} />
-        </Box>
-      )}
 
       {/* 제품 정보 카드 */}
       <Paper elevation={0} sx={{ border: "1px solid #f0f0f0", borderRadius: 2.5, p: 2.5, mb: 2 }}>
