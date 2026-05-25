@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { ko } from "date-fns/locale";
@@ -52,6 +53,10 @@ const formatDateShort = (s: string | null) => s ? new Date(s).toLocaleDateString
 const DRAWER_WIDTH = 700;
 
 export default function ProductsPage() {
+  const { data: session } = useSession();
+  const isManager = (session?.user as any)?.role === "MANAGER";
+  const myFactoryId = (session?.user as any)?.factoryId as string | undefined;
+
   const [products, setProducts] = useState<Product[]>([]);
   const [total, setTotal] = useState(0);
   const [factories, setFactories] = useState<Factory[]>([]);
@@ -92,11 +97,17 @@ export default function ProductsPage() {
     ]).then(([f, c]) => { setFactories(f); setCategories(c); });
   }, []);
 
+  useEffect(() => {
+    if (isManager && myFactoryId) setFactoryFilter(myFactoryId);
+  }, [isManager, myFactoryId]);
+
   useEffect(() => { load(); }, [load]);
 
   const openCreate = () => {
     setEditTarget(null);
-    setForm(emptyForm());
+    const base = emptyForm();
+    if (isManager && myFactoryId) base.factoryIds = [myFactoryId];
+    setForm(base);
     setError(""); setDrawerOpen(true);
   };
 
@@ -244,19 +255,21 @@ export default function ProductsPage() {
 
           <Paper elevation={0} sx={{ p: 2, mb: 2, border: "1px solid #e0e0e0" }}>
             <Stack direction="row" spacing={2}>
+              {!isManager && (
+                <FormControl size="small" sx={{ minWidth: 180 }}>
+                  <InputLabel>매장</InputLabel>
+                  <Select value={factoryFilter} label="매장" onChange={(e) => { setFactoryFilter(e.target.value); setPage(0); }}>
+                    <MenuItem value="">전체</MenuItem>
+                    {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
+                  </Select>
+                </FormControl>
+              )}
               <TextField
                 size="small" placeholder="제품명 검색" value={search}
                 onChange={(e) => { setSearch(e.target.value); setPage(0); }}
                 slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
                 sx={{ width: 280 }}
               />
-              <FormControl size="small" sx={{ minWidth: 180 }}>
-                <InputLabel>매장</InputLabel>
-                <Select value={factoryFilter} label="매장" onChange={(e) => { setFactoryFilter(e.target.value); setPage(0); }}>
-                  <MenuItem value="">전체</MenuItem>
-                  {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
-                </Select>
-              </FormControl>
             </Stack>
           </Paper>
 
@@ -472,7 +485,10 @@ export default function ProductsPage() {
                     (selected as string[]).map((id) => factories.find((f) => f.id === id)?.name || id).join(", ")
                   }
                 >
-                  {factories.map((f) => (
+                  {(isManager && myFactoryId
+                    ? factories.filter((f) => f.id === myFactoryId)
+                    : factories
+                  ).map((f) => (
                     <MenuItem key={f.id} value={f.id}>
                       <Checkbox checked={form.factoryIds.includes(f.id)} size="small" />
                       <ListItemText primary={f.name} />
