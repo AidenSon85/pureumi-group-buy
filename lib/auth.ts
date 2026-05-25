@@ -49,20 +49,24 @@ export const authOptions: NextAuthOptions = {
         const kakaoId = String(account.providerAccountId);
         const email = (token.email as string) || `kakao_${kakaoId}@kakao.local`;
 
-        // 카카오 계정에서 전화번호 추출 (+82 10-XXXX-XXXX → 010-XXXX-XXXX)
+        // 카카오 계정에서 이름/전화번호 추출
+        const kakaoName = (profile?.kakao_account?.profile?.nickname || profile?.properties?.nickname || token.name) as string | undefined;
+        const name = kakaoName?.trim() || "고객";
+
         const rawPhone = profile?.kakao_account?.phone_number as string | undefined;
-        let phone: string | null = null;
-        if (rawPhone) {
-          phone = rawPhone.replace(/^\+82\s*/, "0").replace(/\s/g, "");
-        }
+        const phone = rawPhone ? rawPhone.replace(/^\+82\s*/, "0").replace(/\s/g, "") : null;
 
         let dbUser = await prisma.user.findUnique({ where: { email } });
         if (!dbUser) {
           dbUser = await prisma.user.create({
-            data: { email, name: (token.name as string) || "고객", password: null, role: "CUSTOMER", phone },
+            data: { email, name, password: null, role: "CUSTOMER", phone },
           });
-        } else if (phone && !dbUser.phone) {
-          dbUser = await prisma.user.update({ where: { id: dbUser.id }, data: { phone } });
+        } else {
+          const updates: any = {};
+          if (phone && !dbUser.phone) updates.phone = phone;
+          if (kakaoName && dbUser.name === "고객") updates.name = name;
+          if (Object.keys(updates).length > 0)
+            dbUser = await prisma.user.update({ where: { id: dbUser.id }, data: updates });
         }
         token.sub = dbUser.id;
         token.role = dbUser.role;
