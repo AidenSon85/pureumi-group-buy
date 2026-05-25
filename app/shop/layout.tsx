@@ -8,11 +8,11 @@ import { Box, Toolbar } from "@mui/material";
 
 export default async function ShopLayout({ children }: { children: React.ReactNode }) {
   const session = await getServerSession(authOptions);
-  if (!session) redirect("/sign/signin_mng");
+  if (!session) redirect("/sign/signin");
 
   const role = (session.user as any)?.role;
   if (role === "ADMIN" || role === "MANAGER") redirect("/manage");
-  if (role !== "CUSTOMER") redirect("/sign/signin_mng");
+  if (role !== "CUSTOMER") redirect("/sign/signin");
 
   const factoryId = (session.user as any)?.factoryId;
   let factoryName = "";
