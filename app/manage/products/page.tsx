@@ -215,7 +215,7 @@ export default function ProductsPage() {
     <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={ko}>
       <Box sx={{ display: "flex", gap: 0 }}>
         {/* 목록 */}
-        <Box sx={{ flex: 1, minWidth: 0 }}>
+        <Box sx={{ flex: 1, minWidth: 0, maxWidth: 1400, mx: "auto" }}>
           <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 3 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <InventoryIcon color="primary" />
@@ -343,7 +343,7 @@ export default function ProductsPage() {
               <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}><CircularProgress /></Box>
             ) : (
               <>
-                <Grid container spacing={{ xs: 1.5, sm: 2 }} sx={{ maxWidth: 1200 }}>
+                <Grid container spacing={{ xs: 1.5, sm: 2 }}>
                   {products.length === 0 ? (
                     <Grid size={12}>
                       <Box sx={{ py: 8, textAlign: "center", color: "text.secondary" }}>
@@ -352,7 +352,7 @@ export default function ProductsPage() {
                       </Box>
                     </Grid>
                   ) : products.map((p) => (
-                    <Grid key={p.id} size={{ xs: 6, sm: 4, md: 3, lg: 3 }}>
+                    <Grid key={p.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
                       <Card elevation={0} sx={{
                         border: editTarget?.id === p.id ? "2px solid #1976d2" : "1px solid #e0e0e0",
                         height: "100%", display: "flex", flexDirection: "column",
