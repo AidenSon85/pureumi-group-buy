@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   Box, Paper, Typography, Button, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, IconButton, Dialog, DialogTitle,
-  DialogContent, DialogActions, TextField, Stack, Alert, CircularProgress,
+  DialogContent, DialogActions, TextField, Stack, Alert, CircularProgress, Chip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -12,13 +12,13 @@ import CategoryIcon from "@mui/icons-material/Category";
 
 interface Category {
   id: string;
+  code: string;
   name: string;
   sortOrder: number;
   createdAt: string;
-  _count?: { products: number };
 }
 
-const empty = { name: "", sortOrder: "0" };
+const emptyForm = { name: "", sortOrder: "0" };
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -26,7 +26,7 @@ export default function CategoriesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editTarget, setEditTarget] = useState<Category | null>(null);
-  const [form, setForm] = useState(empty);
+  const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
@@ -42,7 +42,7 @@ export default function CategoriesPage() {
 
   const openCreate = () => {
     setEditTarget(null);
-    setForm(empty);
+    setForm(emptyForm);
     setError("");
     setDialogOpen(true);
   };
@@ -103,26 +103,31 @@ export default function CategoriesPage() {
           <Table>
             <TableHead>
               <TableRow sx={{ "& th": { fontWeight: 700, bgcolor: "#f5f5f5" } }}>
+                <TableCell width={140}>코드</TableCell>
                 <TableCell>카테고리명</TableCell>
-                <TableCell align="center">정렬 순서</TableCell>
-                <TableCell align="center">관리</TableCell>
+                <TableCell align="center" width={100}>정렬 순서</TableCell>
+                <TableCell align="center" width={100}>관리</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {loading ? (
                 <TableRow>
-                  <TableCell colSpan={3} align="center" sx={{ py: 6 }}>
+                  <TableCell colSpan={4} align="center" sx={{ py: 6 }}>
                     <CircularProgress />
                   </TableCell>
                 </TableRow>
               ) : categories.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={3} align="center" sx={{ py: 6, color: "text.secondary" }}>
+                  <TableCell colSpan={4} align="center" sx={{ py: 6, color: "text.secondary" }}>
                     등록된 카테고리가 없습니다
                   </TableCell>
                 </TableRow>
               ) : categories.map((c) => (
                 <TableRow key={c.id} hover>
+                  <TableCell>
+                    <Chip label={c.code} size="small" variant="outlined" color="primary"
+                      sx={{ fontWeight: 700, fontFamily: "monospace", fontSize: 12 }} />
+                  </TableCell>
                   <TableCell>
                     <Typography sx={{ fontWeight: 600 }}>{c.name}</Typography>
                   </TableCell>
@@ -148,12 +153,23 @@ export default function CategoriesPage() {
         <DialogContent>
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           <Stack spacing={2} sx={{ mt: 1 }}>
+            {editTarget && (
+              <TextField
+                label="코드"
+                value={editTarget.code}
+                fullWidth
+                disabled
+                helperText="코드는 자동 부여되며 변경할 수 없습니다"
+                slotProps={{ input: { sx: { fontFamily: "monospace", fontWeight: 700 } } }}
+              />
+            )}
             <TextField
               label="카테고리명 *"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               fullWidth
-              autoFocus
+              autoFocus={!editTarget}
+              helperText={editTarget ? undefined : "코드(CATE00X)는 저장 시 자동 부여됩니다"}
             />
             <TextField
               label="정렬 순서"
@@ -177,9 +193,7 @@ export default function CategoriesPage() {
       <Dialog open={!!deleteId} onClose={() => setDeleteId(null)}>
         <DialogTitle>카테고리 삭제</DialogTitle>
         <DialogContent>
-          <Typography>
-            정말로 이 카테고리를 삭제하시겠습니까?
-          </Typography>
+          <Typography>정말로 이 카테고리를 삭제하시겠습니까?</Typography>
           <Typography variant="body2" sx={{ color: "text.secondary", mt: 1 }}>
             해당 카테고리를 사용 중인 제품이 있으면 삭제되지 않습니다.
           </Typography>

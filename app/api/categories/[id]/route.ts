@@ -7,7 +7,10 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const category = await prisma.category.update({
       where: { id },
-      data: { name, sortOrder: sortOrder ?? undefined },
+      data: {
+        ...(name !== undefined && { name: name.trim() }),
+        ...(sortOrder !== undefined && { sortOrder }),
+      },
     });
     return NextResponse.json(category);
   } catch {
