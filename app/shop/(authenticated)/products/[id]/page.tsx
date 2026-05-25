@@ -315,31 +315,32 @@ export default function ProductDetailPage() {
                     <PersonIcon sx={{ fontSize: 16, color: "#1976d2" }} />
                   </Avatar>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.3, flexWrap: "wrap" }}>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
-                      <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
-                        sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
-                      <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>{formatDT(c.createdAt)}</Typography>
-                    </Stack>
-                    {c.content && (
-                      <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13 }}>{c.content}</Typography>
-                    )}
                     {(() => {
                       const isMyComment =
                         (currentUserId && c.userId === currentUserId && (c.orderId || pendingOrderId)) ||
                         (userPhoneDigits && c.phoneDigits === userPhoneDigits && !!pendingOrderId);
-                      const canCancel = isMyComment;
-                      return canCancel ? (
-                        <Button
-                          size="small" color="error" variant="text"
-                          onClick={() => handleCancelOrder(c)}
-                          disabled={cancellingId === c.id}
-                          sx={{ mt: 0.5, px: 0, minWidth: 0, fontSize: 12 }}
-                        >
-                          {cancellingId === c.id ? "취소 중..." : "주문 취소"}
-                        </Button>
-                      ) : null;
+                      return (
+                        <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.3, flexWrap: "wrap" }}>
+                          <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
+                          <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
+                            sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
+                          <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>{formatDT(c.createdAt)}</Typography>
+                          {isMyComment && (
+                            <Button
+                              size="small" color="error" variant="text"
+                              onClick={() => handleCancelOrder(c)}
+                              disabled={cancellingId === c.id}
+                              sx={{ px: 0.5, minWidth: 0, fontSize: 12, lineHeight: 1 }}
+                            >
+                              {cancellingId === c.id ? "취소 중..." : "주문 취소"}
+                            </Button>
+                          )}
+                        </Stack>
+                      );
                     })()}
+                    {c.content && (
+                      <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13 }}>{c.content}</Typography>
+                    )}
                   </Box>
                 </Stack>
 
