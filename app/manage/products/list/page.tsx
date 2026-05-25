@@ -73,43 +73,33 @@ export default function ProductListPage() {
 
       {/* 조회 조건 */}
       <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2.5, border: "1px solid #e0e0e0" }}>
-        <Grid container spacing={1.5}>
-          {/* 검색어: 모바일 전체 너비 */}
-          <Grid size={{ xs: 12, sm: 6, md: 5 }}>
-            <TextField
-              size="small" fullWidth placeholder="제품명 검색" value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              slotProps={{
-                input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }
-              }}
-            />
-          </Grid>
-
-          {/* 매장: MANAGER는 숨김 */}
+        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ flexWrap: "wrap" }}>
+          <TextField
+            size="small" placeholder="제품명 검색" value={search}
+            onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+            slotProps={{
+              input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }
+            }}
+            sx={{ width: { xs: "100%", sm: 260 } }}
+          />
           {!isManager && (
-            <Grid size={{ xs: 6, sm: 3, md: 4 }}>
-              <FormControl size="small" fullWidth>
-                <InputLabel>매장</InputLabel>
-                <Select value={factoryFilter} label="매장" onChange={(e) => { setFactoryFilter(e.target.value); setPage(1); }}>
-                  <MenuItem value="">전체</MenuItem>
-                  {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
-                </Select>
-              </FormControl>
-            </Grid>
-          )}
-
-          {/* 상태 */}
-          <Grid size={{ xs: isManager ? 12 : 6, sm: 3, md: 3 }}>
-            <FormControl size="small" fullWidth>
-              <InputLabel>상태</InputLabel>
-              <Select value={statusFilter} label="상태" onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
+            <FormControl size="small" sx={{ width: { xs: "100%", sm: 180 } }}>
+              <InputLabel>매장</InputLabel>
+              <Select value={factoryFilter} label="매장" onChange={(e) => { setFactoryFilter(e.target.value); setPage(1); }}>
                 <MenuItem value="">전체</MenuItem>
-                <MenuItem value="true">판매중</MenuItem>
-                <MenuItem value="false">중지</MenuItem>
+                {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
               </Select>
             </FormControl>
-          </Grid>
-        </Grid>
+          )}
+          <FormControl size="small" sx={{ width: { xs: "100%", sm: 140 } }}>
+            <InputLabel>상태</InputLabel>
+            <Select value={statusFilter} label="상태" onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
+              <MenuItem value="">전체</MenuItem>
+              <MenuItem value="true">판매중</MenuItem>
+              <MenuItem value="false">중지</MenuItem>
+            </Select>
+          </FormControl>
+        </Stack>
       </Paper>
 
       {/* 결과 */}
