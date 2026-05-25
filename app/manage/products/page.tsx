@@ -371,25 +371,33 @@ export default function ProductsPage() {
                       <Card elevation={0} onClick={() => router.push(`/manage/products/list/${p.id}`)} sx={{
                         border: editTarget?.id === p.id ? "2px solid #1976d2" : "1px solid #e0e0e0",
                         height: "100%", display: "flex", flexDirection: "column",
-                        opacity: p.isActive ? 1 : 0.6,
                         cursor: "pointer",
                         "&:hover": { boxShadow: 3, borderColor: "#1976d2" },
+                        position: "relative",
                       }}>
+                        {/* 마감됨 오버레이 */}
+                        {!p.isActive && (
+                          <Box sx={{ position: "absolute", top: 8, left: 8, zIndex: 1 }}>
+                            <Chip label="마감" size="small" sx={{ bgcolor: "#616161", color: "#fff", fontWeight: 700, fontSize: 11 }} />
+                          </Box>
+                        )}
                         {p.imageUrl ? (
                           <CardMedia component="img" image={p.imageUrl} alt={p.name}
-                            sx={{ height: { xs: 110, sm: 150 }, maxHeight: 180, objectFit: "cover" }} />
+                            sx={{ height: { xs: 110, sm: 140 }, objectFit: "cover", opacity: p.isActive ? 1 : 0.5 }} />
                         ) : (
-                          <Box sx={{ height: { xs: 110, sm: 150 }, maxHeight: 180, bgcolor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <Box sx={{ height: { xs: 110, sm: 140 }, bgcolor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center", opacity: p.isActive ? 1 : 0.5 }}>
                             <ImageIcon sx={{ fontSize: 40, color: "#ccc" }} />
                           </Box>
                         )}
-                        <CardContent sx={{ flex: 1, p: { xs: 1, sm: 1.5 }, "&:last-child": { pb: { xs: 1, sm: 1.5 } } }}>
+                        <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column", p: { xs: 1, sm: 1.5 }, "&:last-child": { pb: { xs: 1, sm: 1.5 } } }}>
+                          {/* 매장 칩 */}
                           <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.5, mb: 0.5 }}>
                             {getFactoryNames(p).map((name, i) => (
                               <Chip key={i} label={name} size="small" color="primary" variant="outlined"
                                 sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
                             ))}
                           </Stack>
+                          {/* 제품명 */}
                           <Typography variant="subtitle2" sx={{
                             fontWeight: 700, fontSize: { xs: 11, sm: 13 },
                             display: "-webkit-box", WebkitLineClamp: 2,
@@ -397,24 +405,34 @@ export default function ProductsPage() {
                           }}>
                             {p.name}
                           </Typography>
-                          <Typography sx={{ fontWeight: 700, color: "primary.main", fontSize: { xs: 12, sm: 14 } }}>
-                            {formatWon(p.salePrice ?? p.price)}
-                          </Typography>
-                          {p.salePrice && (
-                            <Typography variant="caption" sx={{ color: "text.secondary", textDecoration: "line-through", fontSize: 10 }}>
-                              {formatWon(p.price)}
+                          {/* 가격 */}
+                          <Box sx={{ mb: 0.5 }}>
+                            <Typography sx={{ fontWeight: 700, color: p.isActive ? "primary.main" : "text.secondary", fontSize: { xs: 12, sm: 14 } }}>
+                              {formatWon(p.salePrice ?? p.price)}
                             </Typography>
-                          )}
-                          {/* 관리 버튼 */}
-                          <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 1 }} onClick={(e) => e.stopPropagation()}>
-                            <Tooltip title={p.isActive ? "비활성화" : "활성화"}>
-                              <Switch checked={p.isActive} onChange={() => handleToggle(p)} size="small" />
-                            </Tooltip>
-                            <Box>
-                              <IconButton size="small" onClick={() => openEdit(p)}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
-                              <IconButton size="small" color="error" onClick={() => setDeleteId(p.id)}><DeleteIcon sx={{ fontSize: 16 }} /></IconButton>
-                            </Box>
-                          </Stack>
+                            {p.salePrice && (
+                              <Typography variant="caption" sx={{ color: "text.secondary", textDecoration: "line-through", fontSize: 10 }}>
+                                {formatWon(p.price)}
+                              </Typography>
+                            )}
+                          </Box>
+                          {/* 하단 고정 버튼 영역 */}
+                          <Box sx={{ mt: "auto", pt: 1, borderTop: "1px solid #f0f0f0" }} onClick={(e) => e.stopPropagation()}>
+                            <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between" }}>
+                              <Button
+                                size="small" variant="outlined"
+                                color={p.isActive ? "error" : "success"}
+                                onClick={() => handleToggle(p)}
+                                sx={{ fontSize: 10, px: 1, py: 0.3, minWidth: 0, height: 24, lineHeight: 1 }}
+                              >
+                                {p.isActive ? "마감 처리" : "판매 재개"}
+                              </Button>
+                              <Box>
+                                <IconButton size="small" onClick={() => openEdit(p)}><EditIcon sx={{ fontSize: 15 }} /></IconButton>
+                                <IconButton size="small" color="error" onClick={() => setDeleteId(p.id)}><DeleteIcon sx={{ fontSize: 15 }} /></IconButton>
+                              </Box>
+                            </Stack>
+                          </Box>
                         </CardContent>
                       </Card>
                     </Grid>
