@@ -328,10 +328,10 @@ export default function ProductDetailPage() {
                             <Typography variant="caption" sx={{ color: "text.disabled" }}>{formatDT(c.createdAt)}</Typography>
                             {isMyComment && (
                               <Button
-                                size="small" color="error" variant="text"
+                                size="small" color="error" variant="outlined"
                                 onClick={() => handleCancelOrder(c)}
                                 disabled={cancellingId === c.id}
-                                sx={{ px: 0.5, minWidth: 0, fontSize: 12, lineHeight: 1 }}
+                                sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
                               >
                                 {cancellingId === c.id ? "취소 중..." : "주문 취소"}
                               </Button>
