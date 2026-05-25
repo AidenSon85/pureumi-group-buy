@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import {
   Box, Typography, Paper, Stack, Chip, Table, TableBody, TableCell,
   TableContainer, TableHead, TableRow, Collapse, IconButton, CircularProgress,
-  Button, Avatar,
+  Button, Avatar, Dialog, DialogTitle, DialogContent, DialogActions, Snackbar, Alert,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
@@ -47,14 +47,37 @@ export default function ShopOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [cancelling, setCancelling] = useState(false);
+  const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({ open: false, msg: "", severity: "success" });
   const router = useRouter();
 
-  useEffect(() => {
+  const loadOrders = () => {
     fetch("/api/shop/orders")
       .then((r) => r.json())
       .then((d) => { setOrders(d || []); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { loadOrders(); }, []);
+
+  const handleCancel = async () => {
+    if (!cancelId) return;
+    setCancelling(true);
+    try {
+      const res = await fetch(`/api/shop/orders/${cancelId}`, { method: "PATCH" });
+      if (res.ok) {
+        setSnack({ open: true, msg: "주문이 취소되었습니다", severity: "success" });
+        loadOrders();
+      } else {
+        const d = await res.json();
+        setSnack({ open: true, msg: d.error || "취소 실패", severity: "error" });
+      }
+    } finally {
+      setCancelling(false);
+      setCancelId(null);
+    }
+  };
 
   return (
     <Box>
@@ -169,6 +192,16 @@ export default function ShopOrdersPage() {
                                 )}
                               </Stack>
                             )}
+                            {o.status === "PENDING" && (
+                              <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #e0e0e0", textAlign: "right" }}>
+                                <Button
+                                  size="small" color="error" variant="outlined"
+                                  onClick={(e) => { e.stopPropagation(); setCancelId(o.id); }}
+                                >
+                                  주문 취소
+                                </Button>
+                              </Box>
+                            )}
                           </Box>
                         </Collapse>
                       </TableCell>
@@ -180,6 +213,23 @@ export default function ShopOrdersPage() {
           </TableContainer>
         </Paper>
       )}
+
+      <Dialog open={!!cancelId} onClose={() => setCancelId(null)}>
+        <DialogTitle>주문 취소</DialogTitle>
+        <DialogContent>
+          <Typography>이 주문을 취소하시겠습니까? 취소 후 되돌릴 수 없습니다.</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCancelId(null)}>아니요</Button>
+          <Button color="error" variant="contained" onClick={handleCancel} disabled={cancelling}>
+            {cancelling ? "취소 중..." : "주문 취소"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
+        <Alert severity={snack.severity} variant="filled">{snack.msg}</Alert>
+      </Snackbar>
     </Box>
   );
 }
