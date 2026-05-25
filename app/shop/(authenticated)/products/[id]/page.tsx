@@ -40,6 +40,7 @@ export default function ProductDetailPage() {
   const [qty, setQty] = useState(1);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userPhoneDigits, setUserPhoneDigits] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -59,6 +60,7 @@ export default function ProductDetailPage() {
       setQty(p.minQty || 1);
       setComments(c || []);
       if (u?.id) setCurrentUserId(u.id);
+      if (u?.name) setUserName(u.name);
       if (u?.phone) {
         const digits = u.phone.replace(/\D/g, "").slice(-4);
         setPhoneDigits(digits);
@@ -397,16 +399,30 @@ export default function ProductDetailPage() {
                 {qty}{product.unit} × {formatWon(price)} = <strong>{formatWon(price * qty)}</strong>
               </Typography>
             </Box>
-            <TextField
-              label="전화번호 뒷 4자리"
-              value={phoneDigits}
-              onChange={(e) => { setPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 4)); setPhoneError(""); }}
-              error={!!phoneError}
-              helperText={phoneError || "구매 내역에 표시됩니다"}
-              slotProps={{ htmlInput: { inputMode: "numeric", maxLength: 4 } }}
-              fullWidth
-              size="small"
-            />
+            {userPhoneDigits ? (
+              <Box sx={{ p: 1.5, bgcolor: "#f0f4ff", borderRadius: 2, border: "1px solid #c5cae9" }}>
+                <Stack direction="row" spacing={3}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>이름</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{userName || "고객"}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>전화번호</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>***-****-{userPhoneDigits}</Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            ) : (
+              <TextField
+                label="전화번호 뒷 4자리"
+                value={phoneDigits}
+                onChange={(e) => { setPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 4)); setPhoneError(""); }}
+                error={!!phoneError}
+                helperText={phoneError || "구매 내역에 표시됩니다"}
+                slotProps={{ htmlInput: { inputMode: "numeric", maxLength: 4 } }}
+                fullWidth size="small"
+              />
+            )}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>

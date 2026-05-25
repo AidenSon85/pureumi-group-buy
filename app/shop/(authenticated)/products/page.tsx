@@ -40,6 +40,8 @@ export default function ShopProductsPage() {
 
   const [dialogProduct, setDialogProduct] = useState<Product | null>(null);
   const [phoneDigits, setPhoneDigits] = useState("");
+  const [savedPhoneDigits, setSavedPhoneDigits] = useState<string | null>(null);
+  const [savedUserName, setSavedUserName] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState("");
   const [ordering, setOrdering] = useState(false);
   const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({ open: false, msg: "", severity: "success" });
@@ -47,7 +49,12 @@ export default function ShopProductsPage() {
   useEffect(() => {
     fetch("/api/categories").then((r) => r.json()).then(setCategories).catch(() => {});
     fetch("/api/users/me").then((r) => r.json()).then((u) => {
-      if (u?.phone) setPhoneDigits(u.phone.replace(/\D/g, "").slice(-4));
+      if (u?.phone) {
+        const d = u.phone.replace(/\D/g, "").slice(-4);
+        setPhoneDigits(d);
+        setSavedPhoneDigits(d);
+      }
+      if (u?.name) setSavedUserName(u.name);
     }).catch(() => {});
   }, []);
 
@@ -256,6 +263,20 @@ export default function ShopProductsPage() {
                 </Typography>
               </Box>
             )}
+            {savedPhoneDigits ? (
+              <Box sx={{ p: 1.5, bgcolor: "#f0f4ff", borderRadius: 2, border: "1px solid #c5cae9" }}>
+                <Stack direction="row" spacing={3}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>이름</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>{savedUserName || "고객"}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: "text.secondary" }}>전화번호</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 700 }}>***-****-{savedPhoneDigits}</Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            ) : (
             <TextField
               label="전화번호 뒷 4자리"
               value={phoneDigits}
@@ -265,6 +286,7 @@ export default function ShopProductsPage() {
               slotProps={{ htmlInput: { inputMode: "numeric", maxLength: 4 } }}
               fullWidth size="small"
             />
+            )}
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2.5 }}>
