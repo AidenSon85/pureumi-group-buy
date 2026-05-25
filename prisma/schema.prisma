@@ -24,6 +24,7 @@ model Factory {
   id          String    @id @default(cuid())
   name        String
   code        String    @unique
+  slug        String?   @unique
   address     String?
   phone       String?
   isActive    Boolean   @default(true)

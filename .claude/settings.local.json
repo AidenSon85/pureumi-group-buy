@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx next *)",
+      "Bash(sed -n '77,79p' c:/Users/Aiden/pureumi-group-buy/app/manage/factories/page.tsx)",
+      "Bash(sed -n '86,88p' c:/Users/Aiden/pureumi-group-buy/app/manage/users/page.tsx)",
+      "Bash(sed -n '111,113p' c:/Users/Aiden/pureumi-group-buy/app/manage/orders/page.tsx)",
+      "Bash(sed -n '49,51p' c:/Users/Aiden/pureumi-group-buy/app/manage/orders/daily/page.tsx)",
+      "Bash(sed -n '70,72p' c:/Users/Aiden/pureumi-group-buy/app/manage/orders/by-product/page.tsx)",
+      "Bash(sed -i 's/  return \\(\\\\n    <Box>/  return \\(\\\\n    <Box sx={{ maxWidth: 1200, mx: \"auto\" }}>/' c:/Users/Aiden/pureumi-group-buy/app/manage/factories/page.tsx)",
+      "Bash(sed -i 's/  return \\(\\\\n    <Box>/  return \\(\\\\n    <Box sx={{ maxWidth: 1200, mx: \"auto\" }}>/' c:/Users/Aiden/pureumi-group-buy/app/manage/users/page.tsx)",
+      "Bash(mkdir -p \"c:/Users/Aiden/pureumi-group-buy/app/api/products/[id]/comments\")",
+      "Bash(cd \"c:\\\\Users\\\\Aiden\\\\pureumi-group-buy\" && mkdir -p \"app/shop/\\(authenticated\\)/products/[id]\" \"app/shop/\\(authenticated\\)/cart\" \"app/shop/\\(authenticated\\)/orders\" && echo done)",
+      "Bash(cd \"c:\\\\Users\\\\Aiden\\\\pureumi-group-buy\" && cp \"app/shop/layout.tsx\" \"app/shop/\\(authenticated\\)/layout.tsx\" && cp \"app/shop/page.tsx\" \"app/shop/\\(authenticated\\)/page.tsx\" && cp \"app/shop/cart/page.tsx\" \"app/shop/\\(authenticated\\)/cart/page.tsx\" && cp \"app/shop/orders/page.tsx\" \"app/shop/\\(authenticated\\)/orders/page.tsx\" && cp \"app/shop/products/page.tsx\" \"app/shop/\\(authenticated\\)/products/page.tsx\" && cp \"app/shop/products/[id]/page.tsx\" \"app/shop/\\(authenticated\\)/products/[id]/page.tsx\" && echo done)",
+      "Bash(cd \"c:\\\\Users\\\\Aiden\\\\pureumi-group-buy\" && rm \"app/shop/layout.tsx\" \"app/shop/page.tsx\" \"app/shop/cart/page.tsx\" \"app/shop/orders/page.tsx\" \"app/shop/products/page.tsx\" \"app/shop/products/[id]/page.tsx\" && echo done)",
+      "Bash(mkdir -p \"c:\\\\Users\\\\Aiden\\\\pureumi-group-buy\\\\app\\\\shop\\\\[slug]\" && echo done)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\Aiden\\pureumi-group-buy\\app\\api\\products\\[id]",
+      "c:\\Users\\Aiden\\pureumi-group-buy\\app\\shop\\(authenticated)\\products",
+      "C:\\Users\\Aiden\\pureumi-group-buy\\app\\shop\\products\\[id]",
+      "c:\\Users\\Aiden\\pureumi-group-buy\\app\\shop"
+    ]
+  }
+}
