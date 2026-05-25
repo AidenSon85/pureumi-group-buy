@@ -3,17 +3,16 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Box, Typography, Button, Stack, Chip, Divider, IconButton,
-  CircularProgress, Snackbar, Alert, Paper, Badge, Avatar,
+  CircularProgress, Snackbar, Alert, Paper, Avatar,
+  Dialog, DialogTitle, DialogContent, DialogActions, TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined";
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
-import { useCart } from "@/components/shop/CartContext";
 
 interface Product {
   id: string; name: string; description: string | null; content: string | null;
@@ -33,25 +32,37 @@ const formatDT = (s: string) => new Date(s).toLocaleString("ko-KR", { month: "2-
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { addItem, count } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
-  const [snack, setSnack] = useState(false);
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [phoneDigits, setPhoneDigits] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [ordering, setOrdering] = useState(false);
+  const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({ open: false, msg: "", severity: "success" });
 
   useEffect(() => {
     Promise.all([
       fetch(`/api/products/${id}`).then((r) => r.json()),
       fetch(`/api/products/${id}/comments`).then((r) => r.json()),
-    ]).then(([p, c]) => {
+      fetch("/api/users/me").then((r) => r.json()),
+    ]).then(([p, c, u]) => {
       setProduct(p);
       setQty(p.minQty || 1);
       setComments(c || []);
+      if (u?.phone) {
+        const digits = u.phone.replace(/\D/g, "").slice(-4);
+        setPhoneDigits(digits);
+      }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [id]);
+
+  const loadComments = () =>
+    fetch(`/api/products/${id}/comments`).then((r) => r.json()).then((c) => setComments(c || []));
 
   if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress /></Box>;
   if (!product) return (
@@ -67,23 +78,60 @@ export default function ProductDetailPage() {
   const discountRate = product.salePrice ? Math.round((1 - product.salePrice / product.price) * 100) : 0;
   const allImages = [product.imageUrl, ...product.images.filter((img) => img !== product.imageUrl)].filter(Boolean) as string[];
 
-  const handleAddToCart = () => {
-    addItem({ productId: product.id, name: product.name, price, imageUrl: product.imageUrl, quantity: qty, unit: product.unit, stock: product.stock, maxQty: product.maxQty });
-    setSnack(true);
+  const handleOrder = async () => {
+    const cleaned = phoneDigits.trim();
+    if (!/^\d{4}$/.test(cleaned)) {
+      setPhoneError("전화번호 뒷 4자리를 숫자로 입력해주세요");
+      return;
+    }
+    setPhoneError("");
+    setOrdering(true);
+    try {
+      const [orderRes] = await Promise.all([
+        fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ items: [{ productId: product.id, quantity: qty }] }),
+        }),
+      ]);
+      if (!orderRes.ok) {
+        const d = await orderRes.json();
+        setSnack({ open: true, msg: d.error || "주문 실패", severity: "error" });
+        return;
+      }
+
+      await fetch(`/api/products/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: await fetch("/api/users/me").then((r) => r.json()).then((u) => u.name || "고객"),
+          phoneDigits: cleaned,
+          content: `${product.name} - ${qty}${product.unit}`,
+        }),
+      });
+
+      await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: `010-0000-${cleaned}` }),
+      });
+
+      await loadComments();
+      setDialogOpen(false);
+      setSnack({ open: true, msg: "주문이 완료되었습니다!", severity: "success" });
+      setTimeout(() => router.push("/shop/orders"), 1200);
+    } finally {
+      setOrdering(false);
+    }
   };
 
   return (
     <Box sx={{ maxWidth: 600, mx: "auto", pb: 14 }}>
 
       {/* 상단 네비 */}
-      <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", mb: 1 }}>
+      <Stack direction="row" sx={{ alignItems: "center", mb: 1 }}>
         <IconButton onClick={() => router.push("/shop/products")} size="small">
           <ArrowBackIcon />
-        </IconButton>
-        <IconButton onClick={() => router.push("/shop/cart")} size="small">
-          <Badge badgeContent={count} color="error" max={99}>
-            <ShoppingCartIcon />
-          </Badge>
         </IconButton>
       </Stack>
 
@@ -226,7 +274,6 @@ export default function ProductDetailPage() {
           <Stack divider={<Divider />}>
             {comments.map((c) => (
               <Box key={c.id}>
-                {/* 원댓글 */}
                 <Stack direction="row" sx={{ alignItems: "flex-start", px: 2.5, py: 1.5, gap: 1.5 }}>
                   <Avatar sx={{ width: 30, height: 30, bgcolor: "#e3f2fd", flexShrink: 0 }}>
                     <PersonIcon sx={{ fontSize: 16, color: "#1976d2" }} />
@@ -244,7 +291,6 @@ export default function ProductDetailPage() {
                   </Box>
                 </Stack>
 
-                {/* 관리자 답글 */}
                 {c.replies && c.replies.length > 0 && (
                   <Stack sx={{ ml: { xs: 5, sm: 6 }, mr: 2.5, mb: 1.5 }} spacing={0.5}>
                     {c.replies.map((r) => (
@@ -274,23 +320,50 @@ export default function ProductDetailPage() {
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 100,
         bgcolor: "#fff", borderTop: "1px solid #f0f0f0",
         p: { xs: 2, sm: "16px max(16px, calc(50% - 284px))" },
-        display: "flex", gap: 1.5,
       }}>
-        <Button variant="outlined" size="large" onClick={handleAddToCart} disabled={product.stock === 0}
-          startIcon={<ShoppingCartIcon />}
-          sx={{ flex: 1, py: 1.6, borderRadius: 2, fontWeight: 700, fontSize: 15, borderColor: "#1976d2" }}>
-          장바구니 담기
-        </Button>
-        <Button variant="contained" size="large"
-          onClick={() => { handleAddToCart(); router.push("/shop/cart"); }}
+        <Button
+          variant="contained" size="large" fullWidth
+          onClick={() => setDialogOpen(true)}
           disabled={product.stock === 0}
-          sx={{ flex: 1, py: 1.6, borderRadius: 2, fontWeight: 700, fontSize: 15 }}>
-          {product.stock === 0 ? "품절" : "바로 구매"}
+          sx={{ py: 1.6, borderRadius: 2, fontWeight: 700, fontSize: 16 }}
+        >
+          {product.stock === 0 ? "품절" : `바로 구매 — ${formatWon(price * qty)}`}
         </Button>
       </Box>
 
-      <Snackbar open={snack} autoHideDuration={2000} onClose={() => setSnack(false)} anchorOrigin={{ vertical: "bottom", horizontal: "center" }} sx={{ bottom: 100 }}>
-        <Alert severity="success" variant="filled">장바구니에 담았습니다</Alert>
+      {/* 주문 확인 다이얼로그 */}
+      <Dialog open={dialogOpen} onClose={() => !ordering && setDialogOpen(false)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontWeight: 700 }}>주문하기</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ pt: 1 }}>
+            <Box sx={{ p: 1.5, bgcolor: "#f8f9fa", borderRadius: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 700 }}>{product.name}</Typography>
+              <Typography variant="body2" sx={{ color: "text.secondary" }}>
+                {qty}{product.unit} × {formatWon(price)} = <strong>{formatWon(price * qty)}</strong>
+              </Typography>
+            </Box>
+            <TextField
+              label="전화번호 뒷 4자리"
+              value={phoneDigits}
+              onChange={(e) => { setPhoneDigits(e.target.value.replace(/\D/g, "").slice(0, 4)); setPhoneError(""); }}
+              error={!!phoneError}
+              helperText={phoneError || "구매 내역에 표시됩니다"}
+              slotProps={{ htmlInput: { inputMode: "numeric", maxLength: 4 } }}
+              fullWidth
+              size="small"
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2.5 }}>
+          <Button onClick={() => setDialogOpen(false)} disabled={ordering}>취소</Button>
+          <Button variant="contained" onClick={handleOrder} disabled={ordering} sx={{ fontWeight: 700 }}>
+            {ordering ? <CircularProgress size={20} color="inherit" /> : "주문 확정"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snack.open} autoHideDuration={2500} onClose={() => setSnack((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: "bottom", horizontal: "center" }} sx={{ bottom: 100 }}>
+        <Alert severity={snack.severity} variant="filled">{snack.msg}</Alert>
       </Snackbar>
     </Box>
   );

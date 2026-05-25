@@ -1,11 +1,9 @@
 "use client";
 import {
-  AppBar, Toolbar, Typography, IconButton, Badge, Box, Button, Avatar, Stack,
+  AppBar, Toolbar, Typography, IconButton, Box, Button, Avatar, Stack,
 } from "@mui/material";
-import ShoppingCartIcon from "@mui/icons-material/ShoppingCart";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import LogoutIcon from "@mui/icons-material/Logout";
-import { useCart } from "./CartContext";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 
@@ -15,7 +13,6 @@ interface Props {
 }
 
 export default function ShopHeader({ userName, factoryName }: Props) {
-  const { count } = useCart();
   const router = useRouter();
 
   return (
@@ -50,11 +47,6 @@ export default function ShopHeader({ userName, factoryName }: Props) {
           >
             주문내역
           </Button>
-          <IconButton onClick={() => router.push("/shop/cart")} sx={{ color: "#1a237e" }}>
-            <Badge badgeContent={count} color="error" max={99}>
-              <ShoppingCartIcon />
-            </Badge>
-          </IconButton>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center", ml: 1, pl: 1.5, borderLeft: "1px solid #e0e0e0" }}>
             <Avatar sx={{ width: 30, height: 30, bgcolor: "#1a237e", fontSize: 13 }}>
               {userName[0]}
