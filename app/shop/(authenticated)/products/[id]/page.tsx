@@ -327,7 +327,7 @@ export default function ProductDetailPage() {
           disabled={product.stock === 0}
           sx={{ py: 1.6, borderRadius: 2, fontWeight: 700, fontSize: 16 }}
         >
-          {product.stock === 0 ? "품절" : `바로 구매 — ${formatWon(price * qty)}`}
+          {product.stock === 0 ? "품절" : "바로 구매"}
         </Button>
       </Box>
 
