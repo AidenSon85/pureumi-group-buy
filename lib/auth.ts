@@ -9,6 +9,9 @@ export const authOptions: NextAuthOptions = {
     KakaoProvider({
       clientId: process.env.KAKAO_CLIENT_ID!,
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
+      authorization: {
+        params: { scope: "profile_nickname account_email phone_number" },
+      },
     }),
     CredentialsProvider({
       name: "credentials",
@@ -40,17 +43,26 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, account, trigger, session }: any) {
+    async jwt({ token, user, account, profile, trigger, session }: any) {
       // Kakao 로그인: DB에서 유저 찾기 또는 자동 생성
       if (account?.provider === "kakao") {
         const kakaoId = String(account.providerAccountId);
         const email = (token.email as string) || `kakao_${kakaoId}@kakao.local`;
 
+        // 카카오 계정에서 전화번호 추출 (+82 10-XXXX-XXXX → 010-XXXX-XXXX)
+        const rawPhone = profile?.kakao_account?.phone_number as string | undefined;
+        let phone: string | null = null;
+        if (rawPhone) {
+          phone = rawPhone.replace(/^\+82\s*/, "0").replace(/\s/g, "");
+        }
+
         let dbUser = await prisma.user.findUnique({ where: { email } });
         if (!dbUser) {
           dbUser = await prisma.user.create({
-            data: { email, name: (token.name as string) || "고객", password: null, role: "CUSTOMER" },
+            data: { email, name: (token.name as string) || "고객", password: null, role: "CUSTOMER", phone },
           });
+        } else if (phone && !dbUser.phone) {
+          dbUser = await prisma.user.update({ where: { id: dbUser.id }, data: { phone } });
         }
         token.sub = dbUser.id;
         token.role = dbUser.role;
