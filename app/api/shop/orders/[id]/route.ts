@@ -16,10 +16,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (order.userId !== userId) return NextResponse.json({ error: "권한이 없습니다" }, { status: 403 });
 
   if (body.action === "pickup") {
-    const updated = await prisma.order.update({
-      where: { id },
-      data: { pickedUpAt: new Date() },
+    const now = new Date();
+    await prisma.orderItem.updateMany({
+      where: { orderId: id, status: { not: "CANCELLED" }, pickedUpAt: null },
+      data: { pickedUpAt: now },
     });
+    const updated = await prisma.order.update({ where: { id }, data: { pickedUpAt: now } });
     return NextResponse.json(updated);
   }
 

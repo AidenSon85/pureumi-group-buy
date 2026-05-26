@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Box, Typography, Button, Stack, Chip, Divider, IconButton,
   CircularProgress, Snackbar, Alert, Paper, Avatar,
@@ -39,6 +39,8 @@ const formatDT = (s: string) => new Date(s).toLocaleString("ko-KR", { month: "2-
 export default function ProductDetailPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") === "review" ? 1 : 0;
 
   const [product, setProduct] = useState<Product | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
@@ -51,7 +53,7 @@ export default function ProductDetailPage() {
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
   const [pendingItemId, setPendingItemId] = useState<string | null>(null);
 
-  const [tab, setTab] = useState(0);
+  const [tab, setTab] = useState(initialTab);
   const [canReview, setCanReview] = useState(false);
   const [alreadyReviewed, setAlreadyReviewed] = useState(false);
   const [reviewText, setReviewText] = useState("");

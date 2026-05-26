@@ -45,6 +45,7 @@ export default function ShopOrdersPage() {
   const [cancelOrderTarget, setCancelOrderTarget] = useState<{ orderId: string; orderNo: string } | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [pickupTarget, setPickupTarget] = useState<{ orderId: string; itemId: string; name: string } | null>(null);
+  const [pickupAllTarget, setPickupAllTarget] = useState<{ orderId: string; orderNo: string } | null>(null);
   const [pickingUp, setPickingUp] = useState(false);
   const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({ open: false, msg: "", severity: "success" });
   const router = useRouter();
@@ -89,6 +90,24 @@ export default function ShopOrdersPage() {
         setSnack({ open: true, msg: d.error || "처리 실패", severity: "error" });
       }
     } finally { setPickingUp(false); setPickupTarget(null); }
+  };
+
+  const handlePickupAll = async () => {
+    if (!pickupAllTarget) return;
+    setPickingUp(true);
+    try {
+      const res = await fetch(`/api/shop/orders/${pickupAllTarget.orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pickup" }),
+      });
+      if (res.ok) {
+        setSnack({ open: true, msg: "전체 픽업 완료 처리되었습니다", severity: "success" });
+        loadOrders();
+      } else {
+        setSnack({ open: true, msg: "처리 실패", severity: "error" });
+      }
+    } finally { setPickingUp(false); setPickupAllTarget(null); }
   };
 
   const handleCancelItem = async () => {
@@ -250,7 +269,13 @@ export default function ShopOrdersPage() {
                               ) : pickedUp ? (
                                 <>
                                   <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatWon(item.amount)}</Typography>
-                                  <Chip label="픽업완료" size="small" color="success" sx={{ height: 20, fontSize: 10, fontWeight: 700 }} />
+                                  <Button
+                                    size="small" color="primary" variant="outlined"
+                                    sx={{ fontSize: 10, py: 0.2, px: 0.75, minWidth: 0, lineHeight: 1.4, fontWeight: 700 }}
+                                    onClick={(e) => { e.stopPropagation(); router.push(`/shop/products/${item.product.id}?tab=review`); }}
+                                  >
+                                    리뷰 작성
+                                  </Button>
                                 </>
                               ) : (
                                 <>
@@ -297,16 +322,27 @@ export default function ShopOrdersPage() {
                       </Stack>
                     )}
 
-                    {/* 주문 전체 취소 (픽업된 상품 없고 PENDING일 때만) */}
-                    {o.status === "PENDING" && !anyPickedUp && (
+                    {/* 전체 픽업완료 / 주문 전체 취소 */}
+                    {o.status !== "CANCELLED" && !allPickedUp && (
                       <Box sx={{ mt: 1.5, pt: 1.5, borderTop: "1px solid #ececec" }}>
-                        <Button
-                          size="small" color="error" variant="outlined" fullWidth
-                          sx={{ fontSize: 13, py: 0.8 }}
-                          onClick={() => setCancelOrderTarget({ orderId: o.id, orderNo: o.orderNo })}
-                        >
-                          주문 전체 취소
-                        </Button>
+                        <Stack spacing={1}>
+                          <Button
+                            size="small" color="success" variant="contained" fullWidth
+                            sx={{ fontSize: 13, py: 0.9, fontWeight: 700, borderRadius: 2 }}
+                            onClick={() => setPickupAllTarget({ orderId: o.id, orderNo: o.orderNo })}
+                          >
+                            전체 픽업 완료 확인
+                          </Button>
+                          {o.status === "PENDING" && !anyPickedUp && (
+                            <Button
+                              size="small" color="error" variant="outlined" fullWidth
+                              sx={{ fontSize: 13, py: 0.8 }}
+                              onClick={() => setCancelOrderTarget({ orderId: o.id, orderNo: o.orderNo })}
+                            >
+                              주문 전체 취소
+                            </Button>
+                          )}
+                        </Stack>
                       </Box>
                     )}
                   </Box>
@@ -317,7 +353,26 @@ export default function ShopOrdersPage() {
         </Stack>
       )}
 
-      {/* 픽업 완료 확인 다이얼로그 */}
+      {/* 전체 픽업 완료 확인 */}
+      <Dialog open={!!pickupAllTarget} onClose={() => setPickupAllTarget(null)} fullWidth maxWidth="xs">
+        <DialogTitle sx={{ fontSize: 16, fontWeight: 700 }}>전체 픽업 완료 확인</DialogTitle>
+        <DialogContent>
+          <Typography variant="body2">
+            <strong>{pickupAllTarget?.orderNo}</strong> 주문의 모든 상품을 픽업 완료로 처리하시겠습니까?
+          </Typography>
+          <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
+            직접 수령한 경우에만 확인해 주세요.
+          </Typography>
+        </DialogContent>
+        <DialogActions sx={{ px: 2.5, pb: 2 }}>
+          <Button onClick={() => setPickupAllTarget(null)} sx={{ flex: 1 }}>아니요</Button>
+          <Button color="success" variant="contained" onClick={handlePickupAll} disabled={pickingUp} sx={{ flex: 1 }}>
+            {pickingUp ? "처리 중..." : "전체 픽업 완료"}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 개별 픽업 완료 확인 다이얼로그 */}
       <Dialog open={!!pickupTarget} onClose={() => setPickupTarget(null)} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontSize: 16, fontWeight: 700 }}>픽업 완료 확인</DialogTitle>
         <DialogContent>
