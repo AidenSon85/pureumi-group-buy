@@ -579,26 +579,26 @@ export default function ProductDetailPage() {
                               <Stack direction="row" spacing={0.5}>
                                 {pickedUp ? (
                                   <Button size="small" variant="outlined" color="success" disableRipple
-                                    sx={{ fontSize: 11, fontWeight: 700, pointerEvents: "none", minWidth: 0 }}>
+                                    sx={{ fontSize: 11, fontWeight: 600, height: 26, py: 0, minWidth: 0, pointerEvents: "none" }}>
                                     픽업완료
                                   </Button>
                                 ) : c.orderId && c.itemId ? (
                                   <Button size="small" variant="outlined" color="success"
                                     onClick={() => handlePickup(c)}
-                                    sx={{ fontSize: 11, fontWeight: 700, minWidth: 0 }}>
+                                    sx={{ fontSize: 11, fontWeight: 600, height: 26, py: 0, minWidth: 0 }}>
                                     {pickingUpId === c.id ? "처리 중..." : "픽업 완료"}
                                   </Button>
                                 ) : null}
                                 {pickedUp && alreadyReviewed && (
                                   <Button size="small" variant="outlined" color="primary" disableRipple
-                                    sx={{ fontSize: 11, fontWeight: 700, pointerEvents: "none", minWidth: 0 }}>
+                                    sx={{ fontSize: 11, fontWeight: 600, height: 26, py: 0, minWidth: 0, pointerEvents: "none" }}>
                                     리뷰완료
                                   </Button>
                                 )}
                                 {!pickedUp && isPending && (
                                   <Button size="small" variant="outlined" color="error"
                                     onClick={() => handleCancelOrder(c)}
-                                    sx={{ fontSize: 11, minWidth: 0 }}>
+                                    sx={{ fontSize: 11, fontWeight: 600, height: 26, py: 0, minWidth: 0 }}>
                                     {cancellingId === c.id ? "취소 중..." : "주문 취소"}
                                   </Button>
                                 )}
