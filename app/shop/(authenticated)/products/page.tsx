@@ -323,10 +323,14 @@ export default function ShopProductsPage() {
                   <Box key={p.id} sx={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f0f0f0" : "none" }}>
                     <Stack direction="row" spacing={1.5} sx={{ p: 2, alignItems: "flex-start" }}>
                       <Box onClick={() => router.push(`/shop/products/${p.id}`)}
-                        sx={{ flexShrink: 0, width: 90, height: 90, borderRadius: 1.5, overflow: "hidden", bgcolor: "#f5f5f5", cursor: "pointer" }}>
+                        sx={{ flexShrink: 0, width: 90, height: 90, borderRadius: 1.5, overflow: "hidden", bgcolor: "#f5f5f5", cursor: "pointer", position: "relative" }}>
                         {p.imageUrl
                           ? <CardMedia component="img" image={p.imageUrl} alt={p.name} sx={{ width: 90, height: 90, objectFit: "cover", opacity: soldOut ? 0.5 : 1 }} />
                           : <Box sx={{ width: 90, height: 90, display: "flex", alignItems: "center", justifyContent: "center" }}><ImageIcon sx={{ fontSize: 32, color: "#ccc" }} /></Box>}
+                        <Stack sx={{ position: "absolute", top: 4, left: 4, gap: 0.5, alignItems: "flex-start" }}>
+                          {p.salePrice && <Chip label="SALE" size="small" color="error" sx={{ fontWeight: 700, height: 16, fontSize: 10 }} />}
+                          {!p.groupBuyEndAt && !soldOut && <Chip label="상시" size="small" color="info" sx={{ fontWeight: 700, height: 16, fontSize: 10 }} />}
+                        </Stack>
                       </Box>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
@@ -356,11 +360,9 @@ export default function ShopProductsPage() {
                             재고 {p.stock}{p.unit}{p.stock <= 30 ? " 남았어요!" : ""}
                           </Typography>
                         )}
-                        {!p.groupBuyEndAt ? (
-                          <Chip label="상시판매" size="small" color="info" sx={{ mt: 0.5, height: 20, fontSize: 11, fontWeight: 700 }} />
-                        ) : p.pickupStartAt ? (
+                        {p.groupBuyEndAt && p.pickupStartAt && (
                           <Typography sx={{ fontSize: 12, color: "text.secondary", mt: 0.3 }}>픽업 {pickupLabel(p.pickupStartAt)} 가능</Typography>
-                        ) : null}
+                        )}
                       </Box>
                     </Stack>
                     {/* 하단: 상세보기 + 수량 */}
@@ -412,7 +414,10 @@ export default function ShopProductsPage() {
                       {p.imageUrl
                         ? <Box component="img" src={p.imageUrl} alt={p.name} sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: soldOut ? 0.5 : 1 }} />
                         : <Box sx={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><ImageIcon sx={{ fontSize: { xs: 32, sm: 40 }, color: "#ccc" }} /></Box>}
-                      {p.salePrice && <Chip label="SALE" size="small" color="error" sx={{ position: "absolute", top: 6, left: 6, fontWeight: 700, height: 18, fontSize: 11 }} />}
+                      <Stack sx={{ position: "absolute", top: 6, left: 6, gap: 0.5, alignItems: "flex-start" }}>
+                        {p.salePrice && <Chip label="SALE" size="small" color="error" sx={{ fontWeight: 700, height: 18, fontSize: 11 }} />}
+                        {!p.groupBuyEndAt && !soldOut && <Chip label="상시판매" size="small" color="info" sx={{ fontWeight: 700, height: 18, fontSize: 11 }} />}
+                      </Stack>
                       {soldOut && (
                         <Box sx={{ position: "absolute", inset: 0, bgcolor: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                           <Typography sx={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>품절</Typography>
@@ -435,12 +440,10 @@ export default function ShopProductsPage() {
                         {p.name}
                       </Typography>
 
-                      {/* 픽업일 / 상시판매 */}
-                      {!p.groupBuyEndAt ? (
-                        <Typography sx={{ fontSize: 10, color: "info.main", fontWeight: 700, mb: 0.3 }}>상시판매</Typography>
-                      ) : p.pickupStartAt ? (
+                      {/* 픽업일 */}
+                      {p.groupBuyEndAt && p.pickupStartAt && (
                         <Typography sx={{ fontSize: 10, color: "text.secondary", mb: 0.3 }}>픽업 {pickupLabel(p.pickupStartAt)}</Typography>
-                      ) : null}
+                      )}
 
                       {/* 가격 + 수량 — 하단 정렬 */}
                       <Box sx={{ mt: "auto", pt: 0.5 }}>
