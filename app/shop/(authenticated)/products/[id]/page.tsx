@@ -560,12 +560,10 @@ export default function ProductDetailPage() {
                           <Stack sx={{ flexShrink: 0, alignItems: "flex-end", gap: 0.75 }}>
                             <Typography variant="caption" sx={{ color: "text.disabled", whiteSpace: "nowrap" }}>{formatDT(c.createdAt)}</Typography>
                             {isMyComment && (
-                              pickedUp || alreadyReviewed ? (
+                              pickedUp ? (
                                 <Stack direction="row" spacing={0.5}>
-                                  {pickedUp && (
-                                    <Chip label="픽업완료" size="small" color="success"
-                                      sx={{ height: 20, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
-                                  )}
+                                  <Chip label="픽업완료" size="small" color="success"
+                                    sx={{ height: 20, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
                                   {alreadyReviewed && (
                                     <Chip label="리뷰완료" size="small" color="primary" variant="outlined"
                                       sx={{ height: 20, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />

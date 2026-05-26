@@ -63,6 +63,9 @@ export default function ShopOrdersPage() {
   useEffect(() => {
     loadOrders();
     fetch("/api/users/me").then((r) => r.json()).then((u) => { if (u?.name) setUserName(u.name); });
+    fetch("/api/shop/orders/reviewed").then((r) => r.json()).then((ids: string[]) => {
+      if (Array.isArray(ids)) setReviewedProductIds(new Set(ids));
+    });
   }, []);
 
   const handleCancelOrder = async () => {
