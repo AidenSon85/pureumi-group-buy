@@ -78,6 +78,8 @@ model ProductComment {
   content      String?
   isAdminReply Boolean  @default(false)
   isReview     Boolean  @default(false)
+  rating       Int?
+  reviewImages String[]
   createdAt    DateTime @default(now())
 
   productId    String

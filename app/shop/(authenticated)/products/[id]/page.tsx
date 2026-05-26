@@ -15,6 +15,8 @@ import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined
 import PersonIcon from "@mui/icons-material/Person";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
+import StarIcon from "@mui/icons-material/Star";
+import StarBorderIcon from "@mui/icons-material/StarBorder";
 
 interface Product {
   id: string; name: string; description: string | null; content: string | null;
@@ -31,6 +33,7 @@ interface Comment {
 }
 interface Review {
   id: string; name: string; content: string | null; createdAt: string; userId: string | null;
+  rating: number | null; reviewImages: string[];
 }
 
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
@@ -462,15 +465,36 @@ export default function ProductDetailPage() {
                       <Avatar sx={{ width: 28, height: 28, bgcolor: "#e8f5e9", flexShrink: 0 }}>
                         <PersonIcon sx={{ fontSize: 15, color: "#388e3c" }} />
                       </Avatar>
-                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{rv.name}</Typography>
-                      <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700, lineHeight: 1.2 }}>{rv.name}</Typography>
+                        {rv.rating && (
+                          <Stack direction="row" sx={{ alignItems: "center", gap: 0.25, mt: 0.25 }}>
+                            {[1,2,3,4,5].map((s) => (
+                              s <= rv.rating!
+                                ? <StarIcon key={s} sx={{ fontSize: 13, color: "#FFC107" }} />
+                                : <StarBorderIcon key={s} sx={{ fontSize: 13, color: "#e0e0e0" }} />
+                            ))}
+                          </Stack>
+                        )}
+                      </Box>
+                      <Typography variant="caption" sx={{ color: "text.disabled" }}>
                         {formatDT(rv.createdAt)}
                       </Typography>
                     </Stack>
                     {rv.content && (
-                      <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7, pl: 4.5 }}>
+                      <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7, pl: 4.5, mb: rv.reviewImages?.length ? 1 : 0 }}>
                         {rv.content}
                       </Typography>
+                    )}
+                    {rv.reviewImages?.length > 0 && (
+                      <Stack direction="row" spacing={0.75} sx={{ pl: 4.5, flexWrap: "wrap", gap: 0.75 }}>
+                        {rv.reviewImages.map((img, i) => (
+                          <Box key={i} component="img" src={img}
+                            sx={{ width: 72, height: 72, objectFit: "cover", borderRadius: 1.5, border: "1px solid #e0e0e0", cursor: "pointer" }}
+                            onClick={() => window.open(img, "_blank")}
+                          />
+                        ))}
+                      </Stack>
                     )}
                   </Box>
                 ))}

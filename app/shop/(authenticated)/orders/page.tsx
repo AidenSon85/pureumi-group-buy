@@ -11,6 +11,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import { useRouter } from "next/navigation";
+import ReviewDrawer from "@/components/shop/ReviewDrawer";
 
 interface OrderItem {
   id: string; quantity: number; price: number; amount: number; status: string;
@@ -48,6 +49,8 @@ export default function ShopOrdersPage() {
   const [pickupAllTarget, setPickupAllTarget] = useState<{ orderId: string; orderNo: string } | null>(null);
   const [pickingUp, setPickingUp] = useState(false);
   const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({ open: false, msg: "", severity: "success" });
+  const [reviewTarget, setReviewTarget] = useState<{ productId: string; productName: string; productImageUrl: string | null } | null>(null);
+  const [userName, setUserName] = useState("");
   const router = useRouter();
 
   const loadOrders = () => {
@@ -56,7 +59,10 @@ export default function ShopOrdersPage() {
       .then((d) => { setOrders(d || []); setLoading(false); })
       .catch(() => setLoading(false));
   };
-  useEffect(() => { loadOrders(); }, []);
+  useEffect(() => {
+    loadOrders();
+    fetch("/api/users/me").then((r) => r.json()).then((u) => { if (u?.name) setUserName(u.name); });
+  }, []);
 
   const handleCancelOrder = async () => {
     if (!cancelOrderTarget) return;
@@ -272,7 +278,7 @@ export default function ShopOrdersPage() {
                                   <Button
                                     size="small" color="primary" variant="outlined"
                                     sx={{ fontSize: 10, py: 0.2, px: 0.75, minWidth: 0, lineHeight: 1.4, fontWeight: 700 }}
-                                    onClick={(e) => { e.stopPropagation(); router.push(`/shop/products/${item.product.id}?tab=review`); }}
+                                    onClick={(e) => { e.stopPropagation(); setReviewTarget({ productId: item.product.id, productName: item.product.name, productImageUrl: item.product.imageUrl }); }}
                                   >
                                     리뷰 작성
                                   </Button>
@@ -424,6 +430,19 @@ export default function ShopOrdersPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ReviewDrawer
+        open={!!reviewTarget}
+        onClose={() => setReviewTarget(null)}
+        productId={reviewTarget?.productId ?? ""}
+        productName={reviewTarget?.productName ?? ""}
+        productImageUrl={reviewTarget?.productImageUrl}
+        userName={userName}
+        onSuccess={() => {
+          setSnack({ open: true, msg: "리뷰가 등록되었습니다!", severity: "success" });
+          setReviewTarget(null);
+        }}
+      />
 
       <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: "bottom", horizontal: "center" }}>
         <Alert severity={snack.severity} variant="filled">{snack.msg}</Alert>

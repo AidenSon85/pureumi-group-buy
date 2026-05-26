@@ -53,7 +53,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { name, phoneDigits, content, parentId, isAdminReply, isReview, userId, orderId } = await req.json();
+  const { name, phoneDigits, content, parentId, isAdminReply, isReview, userId, orderId, rating, reviewImages } = await req.json();
 
   if (isAdminReply) {
     if (!content?.trim()) return NextResponse.json({ error: "답글 내용을 입력해주세요" }, { status: 400 });
@@ -83,7 +83,16 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
 
     const reviewerName = name?.trim() || "고객";
     const comment = await prisma.productComment.create({
-      data: { productId: id, name: reviewerName, phoneDigits: "0000", content: content.trim(), isReview: true, userId: uid },
+      data: {
+        productId: id,
+        name: reviewerName,
+        phoneDigits: "0000",
+        content: content.trim(),
+        isReview: true,
+        userId: uid,
+        rating: rating ? Math.min(5, Math.max(1, Number(rating))) : null,
+        reviewImages: Array.isArray(reviewImages) ? reviewImages : [],
+      },
     });
     return NextResponse.json(comment, { status: 201 });
   }
