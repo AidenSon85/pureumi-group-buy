@@ -347,8 +347,14 @@ export default function ShopProductsPage() {
                             </Typography>
                           )}
                         </Typography>
-                        {!soldOut && p.stock <= 30 && (
-                          <Typography sx={{ fontSize: 12, color: "#e65100", fontWeight: 600, mt: 0.3 }}>{p.stock}개 남았어요!</Typography>
+                        {!soldOut && (
+                          <Typography sx={{
+                            fontSize: 12, mt: 0.3,
+                            color: p.stock <= 10 ? "error.main" : p.stock <= 30 ? "#e65100" : "text.disabled",
+                            fontWeight: p.stock <= 30 ? 600 : 400,
+                          }}>
+                            재고 {p.stock}{p.unit}{p.stock <= 30 ? " 남았어요!" : ""}
+                          </Typography>
                         )}
                         {!p.groupBuyEndAt ? (
                           <Chip label="상시판매" size="small" color="info" sx={{ mt: 0.5, height: 20, fontSize: 11, fontWeight: 700 }} />
@@ -358,7 +364,8 @@ export default function ShopProductsPage() {
                       </Box>
                     </Stack>
                     {/* 하단: 상세보기 + 수량 */}
-                    <Stack direction="row" spacing={1} sx={{ px: 2, pb: 2, alignItems: "center" }}>
+                    <Divider />
+                    <Stack direction="row" spacing={1} sx={{ px: 2, py: 1.5, alignItems: "center" }}>
                       <Button variant="outlined" size="small" onClick={() => router.push(`/shop/products/${p.id}`)}
                         sx={{ flex: 1, borderRadius: 2, textTransform: "none", fontWeight: 600, fontSize: 13, color: "text.primary", borderColor: "#ddd", "&:hover": { borderColor: "#bbb", bgcolor: "#fafafa" } }}>
                         상세보기
@@ -428,10 +435,12 @@ export default function ShopProductsPage() {
                         {p.name}
                       </Typography>
 
-                      {/* 픽업일 */}
-                      {p.pickupStartAt && (
+                      {/* 픽업일 / 상시판매 */}
+                      {!p.groupBuyEndAt ? (
+                        <Typography sx={{ fontSize: 10, color: "info.main", fontWeight: 700, mb: 0.3 }}>상시판매</Typography>
+                      ) : p.pickupStartAt ? (
                         <Typography sx={{ fontSize: 10, color: "text.secondary", mb: 0.3 }}>픽업 {pickupLabel(p.pickupStartAt)}</Typography>
-                      )}
+                      ) : null}
 
                       {/* 가격 + 수량 — 하단 정렬 */}
                       <Box sx={{ mt: "auto", pt: 0.5 }}>
@@ -450,13 +459,22 @@ export default function ShopProductsPage() {
                           </Typography>
                         )}
 
-                        {/* 재고 경고 */}
-                        {!soldOut && p.stock <= 30 && (
-                          <Typography sx={{ fontSize: 10, color: "#e65100", fontWeight: 600, mt: 0.3 }}>{p.stock}개 남았어요!</Typography>
+                        {/* 재고 수량 */}
+                        {!soldOut && (
+                          <Typography sx={{
+                            fontSize: 10, mt: 0.3,
+                            color: p.stock <= 10 ? "error.main" : p.stock <= 30 ? "#e65100" : "text.disabled",
+                            fontWeight: p.stock <= 30 ? 600 : 400,
+                          }}>
+                            재고 {p.stock}{p.unit}{p.stock <= 30 ? " 남았어요!" : ""}
+                          </Typography>
                         )}
 
+                        {/* 구분선 */}
+                        <Divider sx={{ my: 1 }} />
+
                         {/* 수량 + 담기 */}
-                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", mt: 1 }}>
+                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                           <Stack direction="row" sx={{ flex: 1, alignItems: "center", border: "1px solid #e0e0e0", borderRadius: 1.5, overflow: "hidden" }}>
                             <IconButton size="small" onClick={() => setQty(p, qty - 1)} disabled={qty <= 0 || soldOut} sx={{ borderRadius: 0, width: 26, height: 28 }}>
                               <RemoveIcon sx={{ fontSize: 11 }} />
