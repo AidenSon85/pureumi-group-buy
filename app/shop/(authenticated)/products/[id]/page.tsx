@@ -552,10 +552,6 @@ export default function ProductDetailPage() {
                               <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
                               <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
                                 sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
-                              {pickedUp && (
-                                <Chip label="픽업완료" size="small" color="success"
-                                  sx={{ height: 18, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
-                              )}
                             </Stack>
                             {c.content && (
                               <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13, mt: 0.3 }}>{c.content}</Typography>
@@ -563,29 +559,42 @@ export default function ProductDetailPage() {
                           </Box>
                           <Stack sx={{ flexShrink: 0, alignItems: "flex-end", gap: 0.75 }}>
                             <Typography variant="caption" sx={{ color: "text.disabled", whiteSpace: "nowrap" }}>{formatDT(c.createdAt)}</Typography>
-                            {isMyComment && !pickedUp && (
-                              <Stack direction="row" spacing={0.5}>
-                                {c.orderId && c.itemId && (
-                                  <Button
-                                    size="small" color="success" variant="outlined"
-                                    onClick={() => handlePickup(c)}
-                                    disabled={pickingUpId === c.id}
-                                    sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
-                                  >
-                                    {pickingUpId === c.id ? "처리 중..." : "픽업 완료"}
-                                  </Button>
-                                )}
-                                {isPending && (
-                                  <Button
-                                    size="small" color="error" variant="outlined"
-                                    onClick={() => handleCancelOrder(c)}
-                                    disabled={cancellingId === c.id}
-                                    sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
-                                  >
-                                    {cancellingId === c.id ? "취소 중..." : "주문 취소"}
-                                  </Button>
-                                )}
-                              </Stack>
+                            {isMyComment && (
+                              pickedUp || alreadyReviewed ? (
+                                <Stack direction="row" spacing={0.5}>
+                                  {pickedUp && (
+                                    <Chip label="픽업완료" size="small" color="success"
+                                      sx={{ height: 20, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
+                                  )}
+                                  {alreadyReviewed && (
+                                    <Chip label="리뷰완료" size="small" color="primary" variant="outlined"
+                                      sx={{ height: 20, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
+                                  )}
+                                </Stack>
+                              ) : (
+                                <Stack direction="row" spacing={0.5}>
+                                  {c.orderId && c.itemId && (
+                                    <Button
+                                      size="small" color="success" variant="outlined"
+                                      onClick={() => handlePickup(c)}
+                                      disabled={pickingUpId === c.id}
+                                      sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
+                                    >
+                                      {pickingUpId === c.id ? "처리 중..." : "픽업 완료"}
+                                    </Button>
+                                  )}
+                                  {isPending && (
+                                    <Button
+                                      size="small" color="error" variant="outlined"
+                                      onClick={() => handleCancelOrder(c)}
+                                      disabled={cancellingId === c.id}
+                                      sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
+                                    >
+                                      {cancellingId === c.id ? "취소 중..." : "주문 취소"}
+                                    </Button>
+                                  )}
+                                </Stack>
+                              )
                             )}
                           </Stack>
                         </Stack>
