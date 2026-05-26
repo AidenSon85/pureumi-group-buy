@@ -20,6 +20,8 @@ import StarBorderIcon from "@mui/icons-material/StarBorder";
 import CloseIcon from "@mui/icons-material/Close";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
+import ReviewDrawer from "@/components/shop/ReviewDrawer";
 
 interface Product {
   id: string; name: string; description: string | null; content: string | null;
@@ -66,6 +68,7 @@ export default function ProductDetailPage() {
   const [submittingReview, setSubmittingReview] = useState(false);
   const [pickingUpId, setPickingUpId] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+  const [reviewEditTarget, setReviewEditTarget] = useState<{ id: string; rating: number | null; content: string; images: string[] } | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [phoneDigits, setPhoneDigits] = useState("");
@@ -481,6 +484,13 @@ export default function ProductDetailPage() {
                           </Stack>
                         )}
                       </Box>
+                      {rv.userId === currentUserId && (
+                        <Button size="small" variant="outlined" startIcon={<EditOutlinedIcon sx={{ fontSize: 13 }} />}
+                          onClick={() => setReviewEditTarget({ id: rv.id, rating: rv.rating, content: rv.content ?? "", images: rv.reviewImages ?? [] })}
+                          sx={{ fontSize: 11, flexShrink: 0 }}>
+                          수정
+                        </Button>
+                      )}
                       <Typography variant="caption" sx={{ color: "text.disabled" }}>
                         {formatDT(rv.createdAt)}
                       </Typography>
@@ -568,7 +578,7 @@ export default function ProductDetailPage() {
                             {isMyComment && (
                               <Stack direction="row" spacing={0.5}>
                                 {pickedUp ? (
-                                  <Button size="small" variant="contained" color="success" disableRipple
+                                  <Button size="small" variant="outlined" color="success" disableRipple
                                     sx={{ fontSize: 11, fontWeight: 700, pointerEvents: "none", minWidth: 0 }}>
                                     픽업완료
                                   </Button>
@@ -769,6 +779,23 @@ export default function ProductDetailPage() {
       <Snackbar open={snack.open} autoHideDuration={2500} onClose={() => setSnack((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: "bottom", horizontal: "center" }} sx={{ bottom: 100 }}>
         <Alert severity={snack.severity} variant="filled">{snack.msg}</Alert>
       </Snackbar>
+
+      {reviewEditTarget && product && (
+        <ReviewDrawer
+          open={!!reviewEditTarget}
+          onClose={() => setReviewEditTarget(null)}
+          productId={product.id}
+          productName={product.name}
+          productImageUrl={product.imageUrl}
+          userName={userName ?? ""}
+          onSuccess={() => { setReviewEditTarget(null); loadReviews(); }}
+          editMode
+          reviewId={reviewEditTarget.id}
+          initialRating={reviewEditTarget.rating}
+          initialContent={reviewEditTarget.content}
+          initialImages={reviewEditTarget.images}
+        />
+      )}
     </Box>
   );
 }
