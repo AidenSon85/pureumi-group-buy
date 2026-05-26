@@ -702,43 +702,66 @@ export default function ProductDetailPage() {
         sx={{ "& .MuiDialog-container": { bgcolor: "rgba(0,0,0,0.88)" } }}
       >
         {lightbox && (
-          <Box sx={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <Box sx={{ position: "relative" }}>
             <IconButton
               onClick={() => setLightbox(null)}
-              sx={{ position: "absolute", top: -18, right: -18, bgcolor: "rgba(255,255,255,0.15)", color: "#fff", width: 32, height: 32, zIndex: 1, "&:hover": { bgcolor: "rgba(255,255,255,0.3)" } }}
+              sx={{ position: "absolute", top: -14, right: -14, bgcolor: "rgba(255,255,255,0.15)", color: "#fff", width: 30, height: 30, zIndex: 10, "&:hover": { bgcolor: "rgba(255,255,255,0.3)" } }}
               size="small"
             >
-              <CloseIcon sx={{ fontSize: 18 }} />
+              <CloseIcon sx={{ fontSize: 16 }} />
             </IconButton>
 
-            {lightbox.images.length > 1 && (
-              <IconButton
-                onClick={() => setLightbox((l) => l ? { ...l, index: (l.index - 1 + l.images.length) % l.images.length } : null)}
-                sx={{ position: "absolute", left: -22, bgcolor: "rgba(255,255,255,0.15)", color: "#fff", "&:hover": { bgcolor: "rgba(255,255,255,0.3)" } }}
-              >
-                <NavigateBeforeIcon />
-              </IconButton>
-            )}
+            {/* 고정 크기 이미지 컨테이너 */}
+            <Box sx={{
+              width: { xs: "82vw", sm: 420 },
+              height: { xs: "82vw", sm: 420 },
+              bgcolor: "#111",
+              borderRadius: 2,
+              overflow: "hidden",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              position: "relative",
+            }}>
+              <Box
+                component="img"
+                src={lightbox.images[lightbox.index]}
+                sx={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }}
+              />
 
-            <Box
-              component="img"
-              src={lightbox.images[lightbox.index]}
-              sx={{ maxWidth: "85vw", maxHeight: "80vh", objectFit: "contain", borderRadius: 2, display: "block" }}
-            />
+              {lightbox.images.length > 1 && (
+                <>
+                  <IconButton
+                    onClick={() => setLightbox((l) => l ? { ...l, index: (l.index - 1 + l.images.length) % l.images.length } : null)}
+                    sx={{ position: "absolute", left: 6, bgcolor: "rgba(0,0,0,0.45)", color: "#fff", width: 34, height: 34, "&:hover": { bgcolor: "rgba(0,0,0,0.7)" } }}
+                  >
+                    <NavigateBeforeIcon />
+                  </IconButton>
+                  <IconButton
+                    onClick={() => setLightbox((l) => l ? { ...l, index: (l.index + 1) % l.images.length } : null)}
+                    sx={{ position: "absolute", right: 6, bgcolor: "rgba(0,0,0,0.45)", color: "#fff", width: 34, height: 34, "&:hover": { bgcolor: "rgba(0,0,0,0.7)" } }}
+                  >
+                    <NavigateNextIcon />
+                  </IconButton>
+                </>
+              )}
+            </Box>
 
+            {/* 하단 인디케이터 */}
             {lightbox.images.length > 1 && (
-              <IconButton
-                onClick={() => setLightbox((l) => l ? { ...l, index: (l.index + 1) % l.images.length } : null)}
-                sx={{ position: "absolute", right: -22, bgcolor: "rgba(255,255,255,0.15)", color: "#fff", "&:hover": { bgcolor: "rgba(255,255,255,0.3)" } }}
-              >
-                <NavigateNextIcon />
-              </IconButton>
-            )}
-
-            {lightbox.images.length > 1 && (
-              <Typography variant="caption" sx={{ position: "absolute", bottom: -28, left: "50%", transform: "translateX(-50%)", color: "rgba(255,255,255,0.7)", fontSize: 12 }}>
-                {lightbox.index + 1} / {lightbox.images.length}
-              </Typography>
+              <Stack direction="row" spacing={0.75} sx={{ justifyContent: "center", mt: 1.5 }}>
+                {lightbox.images.map((_, i) => (
+                  <Box
+                    key={i}
+                    onClick={() => setLightbox((l) => l ? { ...l, index: i } : null)}
+                    sx={{
+                      width: i === lightbox.index ? 20 : 6, height: 6,
+                      borderRadius: 3, bgcolor: i === lightbox.index ? "#fff" : "rgba(255,255,255,0.35)",
+                      cursor: "pointer", transition: "all 0.2s",
+                    }}
+                  />
+                ))}
+              </Stack>
             )}
           </Box>
         )}
