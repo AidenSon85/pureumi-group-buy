@@ -38,9 +38,20 @@ export default function DashboardPage() {
 
   const [factories, setFactories] = useState<Factory[]>([]);
   const [selectedFactory, setSelectedFactory] = useState<string>("");
-  const [periodMode, setPeriodMode] = useState<"today" | "yesterday" | "14" | "30" | "custom">("14");
-  const [customStart, setCustomStart] = useState<Date | null>(subDays(new Date(), 13));
-  const [customEnd, setCustomEnd] = useState<Date | null>(new Date());
+  const [periodMode, setPeriodMode] = useState<"today" | "yesterday" | "14" | "30" | "custom">(() => {
+    if (typeof window === "undefined") return "today";
+    return (localStorage.getItem("dashboardPeriodMode") as "today" | "yesterday" | "14" | "30" | "custom") || "today";
+  });
+  const [customStart, setCustomStart] = useState<Date | null>(() => {
+    if (typeof window === "undefined") return subDays(new Date(), 13);
+    const saved = localStorage.getItem("dashboardCustomStart");
+    return saved ? new Date(saved) : subDays(new Date(), 13);
+  });
+  const [customEnd, setCustomEnd] = useState<Date | null>(() => {
+    if (typeof window === "undefined") return new Date();
+    const saved = localStorage.getItem("dashboardCustomEnd");
+    return saved ? new Date(saved) : new Date();
+  });
   const [stats, setStats] = useState<DailyStat[]>([]);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [summary, setSummary] = useState<Summary>({ totalSales: 0, totalOrders: 0, totalVisitors: 0, activeProducts: 0 });
@@ -137,7 +148,7 @@ export default function DashboardPage() {
           {/* 기간 토글 */}
           <ToggleButtonGroup
             value={periodMode} exclusive size="small"
-            onChange={(_, v) => { if (v) setPeriodMode(v); }}
+            onChange={(_, v) => { if (v) { setPeriodMode(v); localStorage.setItem("dashboardPeriodMode", v); } }}
             sx={{ "& .MuiToggleButton-root": { px: 1.5, py: 0.5, fontSize: 12, fontWeight: 600 } }}
           >
             <ToggleButton value="today">당일</ToggleButton>
@@ -152,13 +163,13 @@ export default function DashboardPage() {
             <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
               <DatePicker
                 label="시작일" value={customStart}
-                onChange={(v) => setCustomStart(v)}
+                onChange={(v) => { setCustomStart(v); if (v) localStorage.setItem("dashboardCustomStart", v.toISOString()); }}
                 slotProps={{ textField: { size: "small", sx: { width: 150 } } }}
               />
               <Typography variant="body2">~</Typography>
               <DatePicker
                 label="종료일" value={customEnd}
-                onChange={(v) => setCustomEnd(v)}
+                onChange={(v) => { setCustomEnd(v); if (v) localStorage.setItem("dashboardCustomEnd", v.toISOString()); }}
                 slotProps={{ textField: { size: "small", sx: { width: 150 } } }}
               />
             </Stack>
@@ -363,38 +374,46 @@ export default function DashboardPage() {
                 </Grid>
               ) : filteredProducts.map((p) => (
                 <Grid key={p.id} size={{ xs: 6, sm: 4, md: 3, lg: 2 }}>
-                  <Card elevation={0} sx={{ border: "1px solid #e0e0e0", height: "100%", display: "flex", flexDirection: "column", opacity: p.isActive ? 1 : 0.6 }}>
-                    {p.imageUrl ? (
-                      <CardMedia component="img" image={p.imageUrl} alt={p.name} sx={{ height: { xs: 100, sm: 140 }, objectFit: "cover" }} />
-                    ) : (
-                      <Box sx={{ height: { xs: 100, sm: 140 }, bgcolor: "#f5f5f5", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        <ImageIcon sx={{ fontSize: 36, color: "#ccc" }} />
-                      </Box>
-                    )}
-                    <CardContent sx={{ flex: 1, p: { xs: 1, sm: 1.5 }, "&:last-child": { pb: { xs: 1, sm: 1.5 } } }}>
-                      {p.category && (
-                        <Chip label={p.category.name} size="small" variant="outlined"
-                          sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 }, mb: 0.5 }} />
+                  <Card elevation={0} sx={{ border: "1px solid #e0e0e0", borderRadius: 2, height: "100%", display: "flex", flexDirection: "column", opacity: p.isActive ? 1 : 0.6, "&:hover": { boxShadow: 3, borderColor: "primary.main" } }}>
+                    {/* 이미지 - 4:3 고정비율 */}
+                    <Box sx={{ aspectRatio: "4/3", overflow: "hidden", bgcolor: "#f5f5f5", flexShrink: 0 }}>
+                      {p.imageUrl ? (
+                        <Box component="img" src={p.imageUrl} alt={p.name} sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                      ) : (
+                        <Box sx={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <ImageIcon sx={{ fontSize: { xs: 28, sm: 36 }, color: "#ccc" }} />
+                        </Box>
                       )}
-                      <Typography variant="subtitle2" sx={{ fontWeight: 700, fontSize: { xs: 11, sm: 13 }, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", mb: 0.5 }}>
+                    </Box>
+                    {/* 콘텐츠 */}
+                    <Box sx={{ p: { xs: 1, sm: 1.25 }, flex: 1, display: "flex", flexDirection: "column" }}>
+                      <Box sx={{ mb: 0.5 }}>
+                        <Chip
+                          label={p.category?.name || "제품"} size="small"
+                          sx={{ height: 18, fontSize: 10, bgcolor: "#f0f4ff", color: "#3f51b5", fontWeight: 600, "& .MuiChip-label": { px: 0.75 } }}
+                        />
+                      </Box>
+                      <Typography sx={{ fontWeight: 700, fontSize: { xs: 11, sm: 13 }, lineHeight: 1.4, mb: 0.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
                         {p.name}
                       </Typography>
-                      {p.salePrice ? (
-                        <>
-                          <Typography sx={{ fontWeight: 700, color: "error.main", fontSize: { xs: 12, sm: 14 } }}>{formatWon(p.salePrice)}</Typography>
-                          <Typography variant="caption" sx={{ color: "text.secondary", textDecoration: "line-through", fontSize: 10 }}>{formatWon(p.price)}</Typography>
-                        </>
-                      ) : (
-                        <Typography sx={{ fontWeight: 700, color: "primary.main", fontSize: { xs: 12, sm: 14 } }}>{formatWon(p.price)}</Typography>
-                      )}
-                      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 0.75 }}>
-                        <Typography variant="caption" sx={{ color: p.stock === 0 ? "error.main" : p.stock < 10 ? "warning.main" : "text.secondary", fontSize: 10 }}>
-                          재고 {p.stock}{p.unit}
-                        </Typography>
-                        <Chip label={p.isActive ? "판매중" : "중지"} size="small" color={p.isActive ? "success" : "default"} variant="outlined"
-                          sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
-                      </Stack>
-                    </CardContent>
+                      <Box sx={{ mt: "auto" }}>
+                        {p.salePrice ? (
+                          <>
+                            <Typography sx={{ fontWeight: 800, color: "error.main", fontSize: { xs: 12, sm: 14 }, lineHeight: 1.2 }}>{formatWon(p.salePrice)}</Typography>
+                            <Typography sx={{ color: "text.disabled", fontSize: 10, textDecoration: "line-through", lineHeight: 1.4 }}>{formatWon(p.price)}</Typography>
+                          </>
+                        ) : (
+                          <Typography sx={{ fontWeight: 800, color: "primary.main", fontSize: { xs: 12, sm: 14 }, lineHeight: 1.2 }}>{formatWon(p.price)}</Typography>
+                        )}
+                        <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 0.75 }}>
+                          <Typography variant="caption" sx={{ color: p.stock === 0 ? "error.main" : p.stock < 10 ? "warning.main" : "text.secondary", fontSize: 10 }}>
+                            재고 {p.stock}{p.unit}
+                          </Typography>
+                          <Chip label={p.isActive ? "판매중" : "중지"} size="small" color={p.isActive ? "success" : "default"} variant="outlined"
+                            sx={{ height: 18, fontSize: 10, fontWeight: 600, "& .MuiChip-label": { px: 0.75 } }} />
+                        </Stack>
+                      </Box>
+                    </Box>
                   </Card>
                 </Grid>
               ))}

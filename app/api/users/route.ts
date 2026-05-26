@@ -26,13 +26,18 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
-  const { name, email, password, phone, role, factoryId, isActive } = body;
+  const { name, nickname, email, password, phone, role, factoryId, isActive, gender, ageRange, birthyear } = body;
   if (!name || !email || !password) return NextResponse.json({ error: "필수 항목 누락" }, { status: 400 });
 
   try {
     const hash = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { name, email, password: hash, phone, role, factoryId: factoryId || null, isActive: isActive ?? true },
+      data: {
+        name, nickname: nickname || null, email, password: hash,
+        phone: phone || null, role, factoryId: factoryId || null,
+        isActive: isActive ?? true,
+        gender: gender || null, ageRange: ageRange || null, birthyear: birthyear || null,
+      },
     });
     return NextResponse.json({ id: user.id, email: user.email, name: user.name }, { status: 201 });
   } catch (e: any) {

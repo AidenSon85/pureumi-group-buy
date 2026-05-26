@@ -2,8 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSession } from "next-auth/react";
 import {
-  Box, Paper, Typography, Button, Grid, Card, CardContent, CardMedia,
-  Chip, FormControl, InputLabel, Select, MenuItem, TextField, InputAdornment,
+  Box, Paper, Typography, Button, Grid, Card,
+  Chip, FormControl, Select, MenuItem, TextField, InputAdornment,
   Stack, CircularProgress, Pagination,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
@@ -71,30 +71,28 @@ export default function ProductListPage() {
         </Button>
       </Stack>
 
-      {/* 조회 조건 */}
-      <Paper elevation={0} sx={{ p: { xs: 1.5, sm: 2 }, mb: 2.5, border: "1px solid #e0e0e0" }}>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ flexWrap: "wrap" }}>
+      {/* 조회 조건 - 한 줄 */}
+      <Paper elevation={0} sx={{ p: { xs: 1.25, sm: 1.5 }, mb: 2, border: "1px solid #e0e0e0", borderRadius: 2 }}>
+        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
           <TextField
             size="small" placeholder="제품명 검색" value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1); }}
             slotProps={{
-              input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }
+              input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" sx={{ color: "text.disabled" }} /></InputAdornment> }
             }}
-            sx={{ width: { xs: "100%", sm: 260 } }}
+            sx={{ flex: 1, minWidth: 0 }}
           />
           {!isManager && (
-            <FormControl size="small" sx={{ width: { xs: "100%", sm: 180 } }}>
-              <InputLabel>매장</InputLabel>
-              <Select value={factoryFilter} label="매장" onChange={(e) => { setFactoryFilter(e.target.value); setPage(1); }}>
-                <MenuItem value="">전체</MenuItem>
+            <FormControl size="small" sx={{ flexShrink: 0, width: { xs: 100, sm: 150 } }}>
+              <Select value={factoryFilter} displayEmpty onChange={(e) => { setFactoryFilter(e.target.value); setPage(1); }}>
+                <MenuItem value=""><em style={{ fontStyle: "normal", color: "#999" }}>매장 전체</em></MenuItem>
                 {factories.map((f) => <MenuItem key={f.id} value={f.id}>{f.name}</MenuItem>)}
               </Select>
             </FormControl>
           )}
-          <FormControl size="small" sx={{ width: { xs: "100%", sm: 140 } }}>
-            <InputLabel>상태</InputLabel>
-            <Select value={statusFilter} label="상태" onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
-              <MenuItem value="">전체</MenuItem>
+          <FormControl size="small" sx={{ flexShrink: 0, width: { xs: 88, sm: 110 } }}>
+            <Select value={statusFilter} displayEmpty onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}>
+              <MenuItem value=""><em style={{ fontStyle: "normal", color: "#999" }}>상태 전체</em></MenuItem>
               <MenuItem value="true">판매중</MenuItem>
               <MenuItem value="false">중지</MenuItem>
             </Select>
@@ -116,89 +114,72 @@ export default function ProductListPage() {
                   elevation={0}
                   onClick={() => router.push(`/manage/products/list/${p.id}`)}
                   sx={{
-                    border: "1px solid #e0e0e0", height: "100%",
+                    border: "1px solid #e0e0e0", borderRadius: 2, height: "100%",
                     display: "flex", flexDirection: "column",
                     cursor: "pointer",
-                    "&:hover": { boxShadow: 3, borderColor: "#1976d2" },
+                    "&:hover": { boxShadow: 3, borderColor: "primary.main" },
                   }}
                 >
-                  {p.imageUrl ? (
-                    <CardMedia
-                      component="img" image={p.imageUrl} alt={p.name}
-                      sx={{ height: { xs: 120, sm: 160 }, objectFit: "cover" }}
-                    />
-                  ) : (
-                    <Box sx={{
-                      height: { xs: 120, sm: 160 }, bgcolor: "#f5f5f5",
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <ImageIcon sx={{ fontSize: { xs: 36, sm: 48 }, color: "#ccc" }} />
-                    </Box>
-                  )}
+                  {/* 이미지 - 4:3 고정비율 */}
+                  <Box sx={{ aspectRatio: "4/3", overflow: "hidden", bgcolor: "#f5f5f5", flexShrink: 0 }}>
+                    {p.imageUrl ? (
+                      <Box
+                        component="img" src={p.imageUrl} alt={p.name}
+                        sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
+                      />
+                    ) : (
+                      <Box sx={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        <ImageIcon sx={{ fontSize: { xs: 32, sm: 40 }, color: "#ccc" }} />
+                      </Box>
+                    )}
+                  </Box>
 
-                  <CardContent sx={{ flex: 1, p: { xs: 1, sm: 1.5 }, "&:last-child": { pb: { xs: 1, sm: 1.5 } } }}>
-                    {/* 매장 + 카테고리 칩 */}
-                    <Stack direction="row" spacing={0.5} sx={{ mb: 0.75, flexWrap: "wrap", gap: 0.5 }}>
-                      <Chip label={p.factory.name} size="small" color="primary" variant="outlined"
-                        sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
-                      {p.category && (
-                        <Chip label={p.category.name} size="small" variant="outlined"
-                          sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
-                      )}
-                    </Stack>
+                  {/* 콘텐츠 */}
+                  <Box sx={{ p: { xs: 1, sm: 1.25 }, flex: 1, display: "flex", flexDirection: "column" }}>
+                    {/* 카테고리 칩 */}
+                    <Box sx={{ mb: 0.5 }}>
+                      <Chip
+                        label={p.category?.name || p.factory.name} size="small"
+                        sx={{ height: 18, fontSize: 10, bgcolor: "#f0f4ff", color: "#3f51b5", fontWeight: 600, "& .MuiChip-label": { px: 0.75 } }}
+                      />
+                    </Box>
 
                     {/* 제품명 */}
-                    <Typography
-                      variant="subtitle2"
-                      sx={{
-                        fontWeight: 700, fontSize: { xs: 12, sm: 14 },
-                        display: "-webkit-box", WebkitLineClamp: 2,
-                        WebkitBoxOrient: "vertical", overflow: "hidden", lineHeight: 1.4, mb: 0.5,
-                      }}
-                    >
+                    <Typography sx={{
+                      fontWeight: 700, fontSize: { xs: 12, sm: 13 }, lineHeight: 1.4, mb: 0.5,
+                      display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
+                    }}>
                       {p.name}
                     </Typography>
 
-                    {/* 설명 - 데스크탑에서만 */}
-                    {p.description && (
-                      <Typography variant="caption" sx={{
-                        color: "text.secondary", display: { xs: "none", sm: "-webkit-box" },
-                        WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-                      }}>
-                        {p.description}
-                      </Typography>
-                    )}
-
-                    {/* 가격 */}
-                    <Box sx={{ mt: 0.75 }}>
+                    {/* 가격 + 재고/상태 - 하단 정렬 */}
+                    <Box sx={{ mt: "auto" }}>
                       {p.salePrice ? (
-                        <Stack spacing={0}>
-                          <Typography sx={{ fontWeight: 700, color: "error.main", fontSize: { xs: 13, sm: 15 } }}>
+                        <>
+                          <Typography sx={{ fontWeight: 800, color: "error.main", fontSize: { xs: 13, sm: 15 }, lineHeight: 1.2 }}>
                             {formatWon(p.salePrice)}
                           </Typography>
-                          <Typography variant="caption" sx={{ color: "text.secondary", textDecoration: "line-through", fontSize: 10 }}>
+                          <Typography sx={{ color: "text.disabled", fontSize: 11, textDecoration: "line-through", lineHeight: 1.4 }}>
                             {formatWon(p.price)}
                           </Typography>
-                        </Stack>
+                        </>
                       ) : (
-                        <Typography sx={{ fontWeight: 700, color: "primary.main", fontSize: { xs: 13, sm: 15 } }}>
+                        <Typography sx={{ fontWeight: 800, color: "primary.main", fontSize: { xs: 13, sm: 15 }, lineHeight: 1.2 }}>
                           {formatWon(p.price)}
                         </Typography>
                       )}
+                      <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 0.75 }}>
+                        <Typography variant="caption" sx={{ color: p.stock < 10 ? "error.main" : "text.secondary", fontSize: 10 }}>
+                          재고 {p.stock}{p.unit}
+                        </Typography>
+                        <Chip
+                          label={p.isActive ? "판매중" : "중지"} size="small"
+                          color={p.isActive ? "success" : "default"} variant="outlined"
+                          sx={{ height: 18, fontSize: 10, fontWeight: 600, "& .MuiChip-label": { px: 0.75 } }}
+                        />
+                      </Stack>
                     </Box>
-
-                    {/* 재고 + 상태 */}
-                    <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "center", mt: 0.75 }}>
-                      <Typography variant="caption" sx={{ color: p.stock < 10 ? "error.main" : "text.secondary", fontSize: 10 }}>
-                        재고 {p.stock}{p.unit}
-                      </Typography>
-                      <Chip
-                        label={p.isActive ? "판매중" : "중지"} size="small"
-                        color={p.isActive ? "success" : "default"} variant="outlined"
-                        sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }}
-                      />
-                    </Stack>
-                  </CardContent>
+                  </Box>
                 </Card>
               </Grid>
             ))}

@@ -15,19 +15,28 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
   if (role !== "CUSTOMER") redirect("/sign/signin");
 
   const factoryId = (session.user as any)?.factoryId;
-  let factoryName = "";
-  if (factoryId) {
-    const factory = await prisma.factory.findUnique({
-      where: { id: factoryId },
-      select: { name: true },
-    });
-    factoryName = factory?.name || "";
-  }
+  if (!factoryId) redirect("/sign/signin?noFactory=1");
+
+  const factory = await prisma.factory.findUnique({
+    where: { id: factoryId },
+    select: { name: true, address: true, phone: true, mapUrl: true, parkingInfo: true, businessHours: true },
+  });
+  const factoryName = factory?.name || "";
 
   return (
     <CartProvider>
       <Box sx={{ minHeight: "100vh", bgcolor: "#f8f9fa" }}>
-        <ShopHeader userName={session.user?.name || ""} factoryName={factoryName} />
+        <ShopHeader
+          userName={session.user?.name || ""}
+          factoryName={factoryName}
+          factoryLocation={{
+            address: factory?.address || null,
+            phone: factory?.phone || null,
+            mapUrl: factory?.mapUrl || null,
+            parkingInfo: factory?.parkingInfo || null,
+            businessHours: factory?.businessHours || null,
+          }}
+        />
         <Toolbar />
         <Box sx={{ maxWidth: 1280, mx: "auto", px: { xs: 2, md: 3 }, py: 3 }}>
           {children}

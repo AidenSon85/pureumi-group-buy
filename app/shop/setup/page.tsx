@@ -26,11 +26,14 @@ function ShopSetup() {
     }
 
     const userFactoryId = (session?.user as any)?.factoryId;
-    if (userFactoryId) {
+
+    // 이미 같은 매장이면 바로 이동
+    if (userFactoryId && !factoryCode) {
       router.replace("/shop");
       return;
     }
 
+    // 새 매장 코드 없으면 에러
     if (!factoryCode) {
       router.replace("/sign/signin?noFactory=1");
       return;

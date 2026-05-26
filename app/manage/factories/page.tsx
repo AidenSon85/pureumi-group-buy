@@ -15,11 +15,12 @@ import LinkIcon from "@mui/icons-material/Link";
 
 interface Factory {
   id: string; name: string; code: string; slug: string | null; address: string | null;
-  phone: string | null; isActive: boolean; createdAt: string;
+  phone: string | null; mapUrl: string | null; parkingInfo: string | null;
+  businessHours: string | null; isActive: boolean; createdAt: string;
   _count?: { users: number; products: number; orders: number };
 }
 
-const empty = { name: "", code: "", slug: "", address: "", phone: "" };
+const empty = { name: "", code: "", slug: "", address: "", phone: "", mapUrl: "", parkingInfo: "", businessHours: "" };
 
 export default function FactoriesPage() {
   const [factories, setFactories] = useState<Factory[]>([]);
@@ -52,7 +53,7 @@ export default function FactoriesPage() {
   const openCreate = () => { setEditTarget(null); setForm(empty); setError(""); setDialogOpen(true); };
   const openEdit = (f: Factory) => {
     setEditTarget(f);
-    setForm({ name: f.name, code: f.code, slug: f.slug || "", address: f.address || "", phone: f.phone || "" });
+    setForm({ name: f.name, code: f.code, slug: f.slug || "", address: f.address || "", phone: f.phone || "", mapUrl: f.mapUrl || "", parkingInfo: f.parkingInfo || "", businessHours: f.businessHours || "" });
     setError("");
     setDialogOpen(true);
   };
@@ -183,6 +184,9 @@ export default function FactoriesPage() {
             />
             <TextField label="주소" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} fullWidth />
             <TextField label="전화번호" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} fullWidth />
+            <TextField label="지도 URL (카카오맵, 네이버지도 등)" value={form.mapUrl} onChange={(e) => setForm({ ...form, mapUrl: e.target.value })} fullWidth helperText="찾아오는 길 페이지에서 지도 버튼으로 연결됩니다" />
+            <TextField label="주차 안내" value={form.parkingInfo} onChange={(e) => setForm({ ...form, parkingInfo: e.target.value })} fullWidth multiline rows={2} />
+            <TextField label="운영 시간" value={form.businessHours} onChange={(e) => setForm({ ...form, businessHours: e.target.value })} fullWidth multiline rows={2} helperText="예: 월-금 09:00~18:00, 토 09:00~13:00" />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

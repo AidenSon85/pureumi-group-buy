@@ -141,15 +141,20 @@ export default function ProductsPage() {
 
     for (const file of Array.from(files)) {
       try {
-        const fd = new FormData();
-        fd.append("file", file);
-        const res = await fetch("/api/upload", { method: "POST", body: fd });
-        const d = await res.json();
-        if (!res.ok || !d.url) {
-          failed.push(file.name);
-        } else {
-          uploaded.push(d.url);
-        }
+        const signRes = await fetch("/api/upload/sign", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName: file.name }),
+        });
+        const { signedUrl, publicUrl, error: signErr } = await signRes.json();
+        if (signErr) throw new Error(signErr);
+        const uploadRes = await fetch(signedUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type || "image/jpeg" },
+          body: file,
+        });
+        if (!uploadRes.ok) throw new Error("upload failed");
+        uploaded.push(publicUrl);
       } catch {
         failed.push(file.name);
       }

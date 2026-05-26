@@ -10,7 +10,7 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.KAKAO_CLIENT_ID!,
       clientSecret: process.env.KAKAO_CLIENT_SECRET!,
       authorization: {
-        params: { scope: "profile_nickname account_email phone_number" },
+        params: { scope: "profile_nickname account_email" },
       },
     }),
     CredentialsProvider({
@@ -47,24 +47,31 @@ export const authOptions: NextAuthOptions = {
       // Kakao 로그인: DB에서 유저 찾기 또는 자동 생성
       if (account?.provider === "kakao") {
         const kakaoId = String(account.providerAccountId);
+        const kakaoAccount = profile?.kakao_account;
         const email = (token.email as string) || `kakao_${kakaoId}@kakao.local`;
 
-        // 카카오 계정에서 이름/전화번호 추출
-        const kakaoName = (profile?.kakao_account?.profile?.nickname || profile?.properties?.nickname || token.name) as string | undefined;
-        const name = kakaoName?.trim() || "고객";
+        const realName = kakaoAccount?.name as string | undefined;
+        const kakaoName = (kakaoAccount?.profile?.nickname || profile?.properties?.nickname || token.name) as string | undefined;
+        const name = realName?.trim() || kakaoName?.trim() || "고객";
 
-        const rawPhone = profile?.kakao_account?.phone_number as string | undefined;
+        const rawPhone = kakaoAccount?.phone_number as string | undefined;
         const phone = rawPhone ? rawPhone.replace(/^\+82\s*/, "0").replace(/\s/g, "") : null;
+        const gender = (kakaoAccount?.gender as string | undefined) ?? null;
+        const ageRange = (kakaoAccount?.age_range as string | undefined) ?? null;
+        const birthyear = (kakaoAccount?.birthyear as string | undefined) ?? null;
 
         let dbUser = await prisma.user.findUnique({ where: { email } });
         if (!dbUser) {
           dbUser = await prisma.user.create({
-            data: { email, name, password: null, role: "CUSTOMER", phone },
+            data: { email, name, password: null, role: "CUSTOMER", phone, gender, ageRange, birthyear },
           });
         } else {
           const updates: any = {};
           if (phone && !dbUser.phone) updates.phone = phone;
-          if (kakaoName && dbUser.name === "고객") updates.name = name;
+          if ((realName?.trim() || kakaoName) && dbUser.name === "고객") updates.name = name;
+          if (gender && !dbUser.gender) updates.gender = gender;
+          if (ageRange && !dbUser.ageRange) updates.ageRange = ageRange;
+          if (birthyear && !dbUser.birthyear) updates.birthyear = birthyear;
           if (Object.keys(updates).length > 0)
             dbUser = await prisma.user.update({ where: { id: dbUser.id }, data: updates });
         }
@@ -99,8 +106,39 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: "/sign/signin_mng",
+    signIn: "/sign/signin",
+    error: "/sign/signin",
   },
   session: { strategy: "jwt" },
+  cookies: {
+    pkceCodeVerifier: {
+      name: "next-auth.pkce.code_verifier",
+      options: {
+        httpOnly: true,
+        sameSite: "none",
+        path: "/",
+        secure: true,
+      },
+    },
+    state: {
+      name: "next-auth.state",
+      options: {
+        httpOnly: true,
+        sameSite: "none",
+        path: "/",
+        secure: true,
+        maxAge: 900,
+      },
+    },
+    callbackUrl: {
+      name: "next-auth.callback-url",
+      options: {
+        httpOnly: true,
+        sameSite: "none",
+        path: "/",
+        secure: true,
+      },
+    },
+  },
   secret: process.env.NEXTAUTH_SECRET,
 };

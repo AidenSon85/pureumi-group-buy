@@ -5,6 +5,7 @@ import {
   Box, Typography, Button, Stack, Chip, Divider, IconButton,
   CircularProgress, Snackbar, Alert, Paper, Avatar,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
+  Tabs, Tab,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import RemoveIcon from "@mui/icons-material/Remove";
@@ -13,6 +14,7 @@ import LocalShippingOutlinedIcon from "@mui/icons-material/LocalShippingOutlined
 import CalendarMonthOutlinedIcon from "@mui/icons-material/CalendarMonthOutlined";
 import PersonIcon from "@mui/icons-material/Person";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
+import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 
 interface Product {
   id: string; name: string; description: string | null; content: string | null;
@@ -26,6 +28,9 @@ interface Comment {
   isAdminReply: boolean; createdAt: string; userId: string | null; orderId: string | null;
   replies?: Comment[];
 }
+interface Review {
+  id: string; name: string; content: string | null; createdAt: string; userId: string | null;
+}
 
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
 const formatDT = (s: string) => new Date(s).toLocaleString("ko-KR", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
@@ -36,12 +41,20 @@ export default function ProductDetailPage() {
 
   const [product, setProduct] = useState<Product | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [qty, setQty] = useState(1);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userPhoneDigits, setUserPhoneDigits] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [pendingItemId, setPendingItemId] = useState<string | null>(null);
+
+  const [tab, setTab] = useState(0);
+  const [canReview, setCanReview] = useState(false);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
+  const [reviewText, setReviewText] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [phoneDigits, setPhoneDigits] = useState("");
@@ -54,11 +67,16 @@ export default function ProductDetailPage() {
     Promise.all([
       fetch(`/api/products/${id}`).then((r) => r.json()),
       fetch(`/api/products/${id}/comments`).then((r) => r.json()),
+      fetch(`/api/products/${id}/comments?type=reviews`).then((r) => r.json()),
       fetch("/api/users/me").then((r) => r.json()),
-    ]).then(([p, c, u]) => {
+      fetch(`/api/shop/orders/picked?productId=${id}`).then((r) => r.json()),
+    ]).then(([p, c, rv, u, picked]) => {
       setProduct(p);
       setQty(p.minQty || 1);
       setComments(c || []);
+      setReviews(rv || []);
+      setCanReview(picked?.canReview ?? false);
+      setAlreadyReviewed(picked?.alreadyReviewed ?? false);
       if (u?.id) setCurrentUserId(u.id);
       if (u?.name) setUserName(u.name);
       if (u?.phone) {
@@ -66,9 +84,8 @@ export default function ProductDetailPage() {
         setPhoneDigits(digits);
         setUserPhoneDigits(digits);
       }
-      // 이 제품의 대기 중인 주문 조회 (userId/orderId 없는 기존 댓글 대비 폴백)
       fetch(`/api/shop/orders/pending?productId=${id}`).then((r) => r.json()).then((o) => {
-        if (o?.id) setPendingOrderId(o.id);
+        if (o?.id) { setPendingOrderId(o.id); setPendingItemId(o.itemId ?? null); }
       });
       setLoading(false);
     }).catch(() => setLoading(false));
@@ -76,6 +93,9 @@ export default function ProductDetailPage() {
 
   const loadComments = () =>
     fetch(`/api/products/${id}/comments`).then((r) => r.json()).then((c) => setComments(c || []));
+
+  const loadReviews = () =>
+    fetch(`/api/products/${id}/comments?type=reviews`).then((r) => r.json()).then((rv) => setReviews(rv || []));
 
   if (loading) return <Box sx={{ display: "flex", justifyContent: "center", py: 10 }}><CircularProgress /></Box>;
   if (!product) return (
@@ -143,19 +163,29 @@ export default function ProductDetailPage() {
     }
   };
 
+  const refreshPending = () =>
+    fetch(`/api/shop/orders/pending?productId=${id}`).then((r) => r.json()).then((o) => {
+      setPendingOrderId(o?.id || null);
+      setPendingItemId(o?.itemId || null);
+    });
+
   const handleCancelOrder = async (comment: Comment) => {
     const targetOrderId = comment.orderId || pendingOrderId;
     if (!targetOrderId) return;
+
+    const targetItemId = pendingItemId;
     setCancellingId(comment.id);
     try {
-      const res = await fetch(`/api/shop/orders/${targetOrderId}`, { method: "PATCH" });
+      let res: Response;
+      if (targetItemId) {
+        res = await fetch(`/api/shop/orders/${targetOrderId}/items/${targetItemId}`, { method: "PATCH" });
+      } else {
+        res = await fetch(`/api/shop/orders/${targetOrderId}`, { method: "PATCH" });
+      }
       if (res.ok) {
         await fetch(`/api/products/${id}/comments?commentId=${comment.id}`, { method: "DELETE" });
         setComments((prev) => prev.filter((c) => c.id !== comment.id));
-        // 남은 대기 주문 재조회
-        fetch(`/api/shop/orders/pending?productId=${id}`).then((r) => r.json()).then((o) => {
-          setPendingOrderId(o?.id || null);
-        });
+        await refreshPending();
         setSnack({ open: true, msg: "주문이 취소되었습니다", severity: "success" });
       } else {
         const d = await res.json();
@@ -163,6 +193,30 @@ export default function ProductDetailPage() {
       }
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const handleSubmitReview = async () => {
+    if (!reviewText.trim()) return;
+    setSubmittingReview(true);
+    try {
+      const res = await fetch(`/api/products/${id}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: userName || "고객", content: reviewText.trim(), isReview: true }),
+      });
+      if (res.ok) {
+        setReviewText("");
+        setCanReview(false);
+        setAlreadyReviewed(true);
+        await loadReviews();
+        setSnack({ open: true, msg: "리뷰가 등록되었습니다!", severity: "success" });
+      } else {
+        const d = await res.json();
+        setSnack({ open: true, msg: d.error || "리뷰 등록 실패", severity: "error" });
+      }
+    } finally {
+      setSubmittingReview(false);
     }
   };
 
@@ -272,30 +326,129 @@ export default function ProductDetailPage() {
         </Typography>
       </Paper>
 
-      {/* 상세 내용 */}
-      {product.content && (
-        <Paper elevation={0} sx={{ border: "1px solid #f0f0f0", borderRadius: 2.5, p: 2.5, mb: 2 }}>
-          <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>제품 상세</Typography>
-          <Divider sx={{ mb: 2 }} />
-          <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.9, color: "text.secondary" }}>
-            {product.content}
-          </Typography>
-        </Paper>
-      )}
+      {/* 탭: 상품 정보 / 리뷰 */}
+      <Paper elevation={0} sx={{ border: "1px solid #f0f0f0", borderRadius: 2.5, overflow: "hidden", mb: 2 }}>
+        <Tabs
+          value={tab}
+          onChange={(_, v) => setTab(v)}
+          variant="fullWidth"
+          sx={{ borderBottom: "1px solid #f0f0f0", minHeight: 44, "& .MuiTabs-indicator": { height: 3 } }}
+        >
+          <Tab label="상품 정보" sx={{ fontWeight: 700, fontSize: 14, minHeight: 44 }} />
+          <Tab
+            label={`리뷰 (${reviews.length}건)`}
+            icon={<RateReviewOutlinedIcon sx={{ fontSize: 15 }} />}
+            iconPosition="start"
+            sx={{ fontWeight: 700, fontSize: 14, minHeight: 44 }}
+          />
+        </Tabs>
 
-      {/* 이미지 전체 나열 */}
-      {allImages.length > 0 && (
-        <Paper elevation={0} sx={{ border: "1px solid #f0f0f0", borderRadius: 2.5, overflow: "hidden", mb: 2 }}>
-          <Box sx={{ px: 2.5, py: 1.5, borderBottom: "1px solid #f0f0f0" }}>
-            <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>상품 이미지 ({allImages.length}장)</Typography>
+        {/* 상품 정보 탭 */}
+        {tab === 0 && (
+          <Box>
+            {product.content ? (
+              <Box sx={{ p: 2.5 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5 }}>제품 상세</Typography>
+                <Divider sx={{ mb: 2 }} />
+                <Typography variant="body2" sx={{ whiteSpace: "pre-wrap", lineHeight: 1.9, color: "text.secondary" }}>
+                  {product.content}
+                </Typography>
+              </Box>
+            ) : null}
+
+            {allImages.length > 0 && (
+              <Box>
+                {product.content && <Divider />}
+                <Box sx={{ px: 2.5, py: 1.5, borderBottom: allImages.length > 0 ? "1px solid #f0f0f0" : undefined }}>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>상품 이미지 ({allImages.length}장)</Typography>
+                </Box>
+                <Stack>
+                  {allImages.map((img, i) => (
+                    <Box key={i} component="img" src={img} alt={`이미지 ${i + 1}`} sx={{ width: "100%", display: "block" }} />
+                  ))}
+                </Stack>
+              </Box>
+            )}
+
+            {!product.content && allImages.length === 0 && (
+              <Box sx={{ py: 6, textAlign: "center", color: "text.secondary" }}>
+                <Typography variant="body2">상세 정보가 없습니다</Typography>
+              </Box>
+            )}
           </Box>
-          <Stack>
-            {allImages.map((img, i) => (
-              <Box key={i} component="img" src={img} alt={`이미지 ${i + 1}`} sx={{ width: "100%", display: "block" }} />
-            ))}
-          </Stack>
-        </Paper>
-      )}
+        )}
+
+        {/* 리뷰 탭 */}
+        {tab === 1 && (
+          <Box>
+            {/* 리뷰 작성 폼 */}
+            {canReview && (
+              <Box sx={{ p: 2.5, borderBottom: "1px solid #f0f0f0", bgcolor: "#fafffe" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700, mb: 1.5, color: "success.main" }}>
+                  리뷰 작성
+                </Typography>
+                <TextField
+                  multiline rows={3} fullWidth size="small"
+                  placeholder="상품에 대한 솔직한 리뷰를 남겨주세요"
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  sx={{ mb: 1.5 }}
+                />
+                <Button
+                  variant="contained" color="success" size="small"
+                  onClick={handleSubmitReview}
+                  disabled={submittingReview || !reviewText.trim()}
+                  sx={{ fontWeight: 700 }}
+                >
+                  {submittingReview ? <CircularProgress size={16} color="inherit" /> : "리뷰 등록"}
+                </Button>
+              </Box>
+            )}
+
+            {alreadyReviewed && (
+              <Box sx={{ px: 2.5, py: 1.5, borderBottom: "1px solid #f0f0f0", bgcolor: "#f0fff4" }}>
+                <Typography variant="caption" sx={{ color: "success.main", fontWeight: 600 }}>
+                  리뷰를 작성하셨습니다. 감사합니다!
+                </Typography>
+              </Box>
+            )}
+
+            {/* 리뷰 목록 */}
+            {reviews.length === 0 ? (
+              <Box sx={{ py: 6, textAlign: "center", color: "text.secondary" }}>
+                <RateReviewOutlinedIcon sx={{ fontSize: 40, opacity: 0.3, display: "block", mx: "auto", mb: 1 }} />
+                <Typography variant="body2">아직 리뷰가 없습니다</Typography>
+                {!canReview && !alreadyReviewed && (
+                  <Typography variant="caption" sx={{ mt: 0.5, display: "block" }}>
+                    픽업 완료 후 첫 리뷰를 남겨보세요
+                  </Typography>
+                )}
+              </Box>
+            ) : (
+              <Stack divider={<Divider />}>
+                {reviews.map((rv) => (
+                  <Box key={rv.id} sx={{ px: 2.5, py: 2 }}>
+                    <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.75 }}>
+                      <Avatar sx={{ width: 28, height: 28, bgcolor: "#e8f5e9", flexShrink: 0 }}>
+                        <PersonIcon sx={{ fontSize: 15, color: "#388e3c" }} />
+                      </Avatar>
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>{rv.name}</Typography>
+                      <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>
+                        {formatDT(rv.createdAt)}
+                      </Typography>
+                    </Stack>
+                    {rv.content && (
+                      <Typography variant="body2" sx={{ color: "text.secondary", lineHeight: 1.7, pl: 4.5 }}>
+                        {rv.content}
+                      </Typography>
+                    )}
+                  </Box>
+                ))}
+              </Stack>
+            )}
+          </Box>
+        )}
+      </Paper>
 
       {/* 구매 내역 댓글 */}
       <Paper elevation={0} sx={{ border: "1px solid #f0f0f0", borderRadius: 2.5, overflow: "hidden", mb: 2 }}>

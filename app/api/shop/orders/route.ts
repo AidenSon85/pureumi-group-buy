@@ -15,7 +15,7 @@ export async function GET() {
     include: {
       factory: { select: { name: true } },
       items: {
-        include: { product: { select: { name: true, imageUrl: true } } },
+        include: { product: { select: { id: true, name: true, imageUrl: true } } },
       },
     },
   });

@@ -3,7 +3,7 @@ import { useState, useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import {
   Box, Typography, Chip, Stack, CircularProgress, Button,
-  Divider, IconButton, Tab, Tabs, Paper, TextField, Avatar,
+  Divider, IconButton, Tab, Tabs, Paper, TextField, Avatar, Tooltip,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import EditIcon from "@mui/icons-material/Edit";
@@ -15,6 +15,8 @@ import InventoryOutlinedIcon from "@mui/icons-material/InventoryOutlined";
 import CommentIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PersonIcon from "@mui/icons-material/Person";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 
 interface Product {
   id: string; name: string; description: string | null; content: string | null;
@@ -28,7 +30,7 @@ interface Product {
 interface Factory { id: string; name: string }
 interface Comment {
   id: string; name: string; phoneDigits: string; content: string | null;
-  isAdminReply: boolean; createdAt: string;
+  isAdminReply: boolean; createdAt: string; orderId: string | null; pickedUpAt: string | null;
   replies?: Comment[];
 }
 
@@ -89,6 +91,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
 
   const handleCommentDelete = async (commentId: string) => {
     await fetch(`/api/products/${id}/comments?commentId=${commentId}`, { method: "DELETE" });
+    loadComments();
+  };
+
+  const handlePickupToggle = async (orderId: string, pickedUp: boolean) => {
+    await fetch(`/api/orders/${orderId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pickedUp }),
+    });
     loadComments();
   };
 
@@ -268,6 +279,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
                         <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
                           sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
+                        {c.pickedUpAt && (
+                          <Chip label="픽업완료" size="small" color="success"
+                            sx={{ height: 18, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
+                        )}
                         <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>
                           {formatDateTime(c.createdAt)}
                         </Typography>
@@ -282,10 +297,25 @@ export default function ProductDetailPage({ params }: { params: Promise<{ id: st
                         {replyingTo === c.id ? "취소" : "↩ 답글"}
                       </Button>
                     </Box>
-                    <IconButton size="small" color="error" onClick={() => handleCommentDelete(c.id)}
-                      sx={{ flexShrink: 0, opacity: 0.5, "&:hover": { opacity: 1 } }}>
-                      <DeleteIcon sx={{ fontSize: 15 }} />
-                    </IconButton>
+                    <Stack sx={{ flexShrink: 0, alignItems: "center" }} spacing={0.5}>
+                      {c.orderId && (
+                        <Tooltip title={c.pickedUpAt ? "픽업완료 취소" : "픽업완료 처리"}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handlePickupToggle(c.orderId!, !c.pickedUpAt)}
+                            sx={{ color: c.pickedUpAt ? "success.main" : "text.disabled", "&:hover": { color: c.pickedUpAt ? "success.dark" : "success.main" } }}
+                          >
+                            {c.pickedUpAt
+                              ? <CheckCircleIcon sx={{ fontSize: 18 }} />
+                              : <RadioButtonUncheckedIcon sx={{ fontSize: 18 }} />}
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      <IconButton size="small" color="error" onClick={() => handleCommentDelete(c.id)}
+                        sx={{ opacity: 0.5, "&:hover": { opacity: 1 } }}>
+                        <DeleteIcon sx={{ fontSize: 15 }} />
+                      </IconButton>
+                    </Stack>
                   </Stack>
 
                   {/* 관리자 답글 입력 폼 */}

@@ -15,10 +15,18 @@ export async function GET(req: NextRequest) {
     where: {
       userId,
       status: "PENDING",
-      items: { some: { productId } },
+      items: { some: { productId, status: { not: "CANCELLED" } } },
     },
     orderBy: { orderedAt: "desc" },
+    include: {
+      items: {
+        where: { productId, status: { not: "CANCELLED" } },
+        select: { id: true },
+      },
+    },
   });
 
-  return NextResponse.json(order);
+  if (!order) return NextResponse.json(null);
+
+  return NextResponse.json({ id: order.id, itemId: order.items[0]?.id ?? null });
 }

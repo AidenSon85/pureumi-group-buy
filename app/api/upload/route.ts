@@ -9,7 +9,17 @@ const supabase = createClient(
 const BUCKET = "products";
 
 export async function POST(req: NextRequest) {
-  const formData = await req.formData();
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    return NextResponse.json({ error: "서버 설정 오류: Supabase 환경변수 없음" }, { status: 500 });
+  }
+
+  let formData: FormData;
+  try {
+    formData = await req.formData();
+  } catch (e: any) {
+    return NextResponse.json({ error: `폼데이터 파싱 실패: ${e.message}` }, { status: 400 });
+  }
+
   const file = formData.get("file") as File | null;
   if (!file) return NextResponse.json({ error: "파일이 없습니다" }, { status: 400 });
 
@@ -27,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   if (error) {
     console.error("Supabase upload error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: `Supabase 오류: ${error.message}` }, { status: 500 });
   }
 
   const { data: { publicUrl } } = supabase.storage.from(BUCKET).getPublicUrl(data.path);

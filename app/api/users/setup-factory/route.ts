@@ -12,13 +12,6 @@ export async function POST(req: NextRequest) {
   const factory = await prisma.factory.findUnique({ where: { code: factoryCode } });
   if (!factory) return NextResponse.json({ error: "매장을 찾을 수 없습니다" }, { status: 404 });
 
-  const user = await prisma.user.findUnique({ where: { id: token.sub } });
-  if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
-
-  if (user.factoryId) {
-    return NextResponse.json({ factoryId: user.factoryId });
-  }
-
   await prisma.user.update({
     where: { id: token.sub },
     data: { factoryId: factory.id },

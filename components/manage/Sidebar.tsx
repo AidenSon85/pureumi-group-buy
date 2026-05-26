@@ -20,6 +20,7 @@ import PersonIcon from "@mui/icons-material/Person";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import CategoryIcon from "@mui/icons-material/Category";
+import ViewCarouselIcon from "@mui/icons-material/ViewCarousel";
 import { useSession } from "next-auth/react";
 
 const DRAWER_WIDTH = 240;
@@ -35,14 +36,9 @@ interface NavItem {
 const navItems: NavItem[] = [
   { title: "대시보드", icon: <DashboardIcon />, href: "/manage" },
   { title: "매장 관리", icon: <StoreIcon />, href: "/manage/factories" },
-  {
-    title: "사용자 관리",
-    icon: <PeopleIcon />,
-    children: [
-      { title: "사용자 목록", icon: <ListAltIcon />, href: "/manage/users" },
-    ],
-  },
+  { title: "사용자 관리", icon: <PeopleIcon />, href: "/manage/users" },
   { title: "카테고리 관리", icon: <CategoryIcon />, href: "/manage/categories" },
+  { title: "배너 관리", icon: <ViewCarouselIcon />, href: "/manage/banners" },
   {
     title: "제품 관리",
     icon: <InventoryIcon />,
