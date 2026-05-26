@@ -6,6 +6,7 @@ import {
 import LogoutIcon from "@mui/icons-material/Logout";
 import ReceiptLongIcon from "@mui/icons-material/ReceiptLong";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
+import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 import CloseIcon from "@mui/icons-material/Close";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -86,6 +87,22 @@ export default function ShopHeader({ userName, factoryName, factoryLocation }: P
                 </IconButton>
               </>
             )}
+            <Button
+              size="small"
+              startIcon={<RateReviewOutlinedIcon fontSize="small" />}
+              onClick={() => router.push("/shop/reviews")}
+              sx={{ textTransform: "none", fontWeight: 600, color: "#1a237e", fontSize: 13, display: { xs: "none", sm: "flex" } }}
+            >
+              내 리뷰
+            </Button>
+            <IconButton
+              size="small"
+              onClick={() => router.push("/shop/reviews")}
+              sx={{ color: "#1a237e", display: { xs: "flex", sm: "none" } }}
+              title="내 리뷰"
+            >
+              <RateReviewOutlinedIcon fontSize="small" />
+            </IconButton>
             <Button
               size="small"
               startIcon={<ReceiptLongIcon fontSize="small" />}
