@@ -563,10 +563,10 @@ export default function ProductDetailPage() {
                               pickedUp ? (
                                 <Stack direction="row" spacing={0.5}>
                                   <Chip label="픽업완료" size="small" color="success"
-                                    sx={{ height: 20, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
+                                    sx={{ height: 24, fontSize: 11, fontWeight: 700, "& .MuiChip-label": { px: 1 } }} />
                                   {alreadyReviewed && (
                                     <Chip label="리뷰완료" size="small" color="primary" variant="outlined"
-                                      sx={{ height: 20, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
+                                      sx={{ height: 24, fontSize: 11, fontWeight: 700, "& .MuiChip-label": { px: 1 } }} />
                                   )}
                                 </Stack>
                               ) : (
@@ -576,7 +576,7 @@ export default function ProductDetailPage() {
                                       size="small" color="success" variant="outlined"
                                       onClick={() => handlePickup(c)}
                                       disabled={pickingUpId === c.id}
-                                      sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
+                                      sx={{ height: 24, px: 1.25, fontSize: 11, fontWeight: 700, borderRadius: 12, minWidth: 0, lineHeight: 1 }}
                                     >
                                       {pickingUpId === c.id ? "처리 중..." : "픽업 완료"}
                                     </Button>
@@ -586,7 +586,7 @@ export default function ProductDetailPage() {
                                       size="small" color="error" variant="outlined"
                                       onClick={() => handleCancelOrder(c)}
                                       disabled={cancellingId === c.id}
-                                      sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
+                                      sx={{ height: 24, px: 1.25, fontSize: 11, borderRadius: 12, minWidth: 0, lineHeight: 1 }}
                                     >
                                       {cancellingId === c.id ? "취소 중..." : "주문 취소"}
                                     </Button>
@@ -711,8 +711,8 @@ export default function ProductDetailPage() {
 
             {/* 고정 크기 이미지 컨테이너 */}
             <Box sx={{
-              width: { xs: "82vw", sm: 420 },
-              height: { xs: "82vw", sm: 420 },
+              width: { xs: "92vw", sm: 560 },
+              height: { xs: "92vw", sm: 560 },
               bgcolor: "#111",
               borderRadius: 2,
               overflow: "hidden",
