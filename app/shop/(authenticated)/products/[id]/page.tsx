@@ -528,22 +528,28 @@ export default function ProductDetailPage() {
               .sort((a, b) => {
                 const aIsMine = currentUserId ? a.userId === currentUserId : false;
                 const bIsMine = currentUserId ? b.userId === currentUserId : false;
+                const aReviewed = aIsMine && !!a.pickedUpAt && alreadyReviewed;
+                const bReviewed = bIsMine && !!b.pickedUpAt && alreadyReviewed;
+                if (aReviewed && !bReviewed) return 1;
+                if (!aReviewed && bReviewed) return -1;
                 if (aIsMine && !bIsMine) return -1;
                 if (!aIsMine && bIsMine) return 1;
                 return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
               })
-              .map((c) => (
-              <Box key={c.id}>
+              .map((c) => {
+                const isMyComment =
+                  (currentUserId && c.userId === currentUserId && (c.orderId || pendingOrderId)) ||
+                  (userPhoneDigits && c.phoneDigits === userPhoneDigits && !!pendingOrderId);
+                const pickedUp = !!c.pickedUpAt;
+                const isReviewed = !!(isMyComment && pickedUp && alreadyReviewed);
+                return (
+              <Box key={c.id} sx={isReviewed ? { bgcolor: "#f6fdf7" } : undefined}>
                 <Stack direction="row" sx={{ alignItems: "flex-start", px: 2.5, py: 1.5, gap: 1.5 }}>
                   <Avatar sx={{ width: 30, height: 30, bgcolor: "#e3f2fd", flexShrink: 0 }}>
                     <PersonIcon sx={{ fontSize: 16, color: "#1976d2" }} />
                   </Avatar>
                   <Box sx={{ flex: 1, minWidth: 0 }}>
                     {(() => {
-                      const isMyComment =
-                        (currentUserId && c.userId === currentUserId && (c.orderId || pendingOrderId)) ||
-                        (userPhoneDigits && c.phoneDigits === userPhoneDigits && !!pendingOrderId);
-                      const pickedUp = !!c.pickedUpAt;
                       const isPending = c.orderStatus === "PENDING";
                       return (
                         <Stack direction="row" sx={{ alignItems: "flex-start", gap: 1 }}>
@@ -620,7 +626,8 @@ export default function ProductDetailPage() {
                   </Stack>
                 )}
               </Box>
-            ))}
+            );
+          })}
           </Stack>
         )}
       </Paper>
