@@ -17,6 +17,9 @@ import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutline
 import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
+import CloseIcon from "@mui/icons-material/Close";
+import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
+import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 
 interface Product {
   id: string; name: string; description: string | null; content: string | null;
@@ -28,7 +31,7 @@ interface Product {
 interface Comment {
   id: string; name: string; phoneDigits: string; content: string | null;
   isAdminReply: boolean; createdAt: string; userId: string | null; orderId: string | null;
-  pickedUpAt: string | null; itemId: string | null;
+  pickedUpAt: string | null; itemId: string | null; orderStatus: string | null;
   replies?: Comment[];
 }
 interface Review {
@@ -62,6 +65,7 @@ export default function ProductDetailPage() {
   const [reviewText, setReviewText] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [pickingUpId, setPickingUpId] = useState<string | null>(null);
+  const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [phoneDigits, setPhoneDigits] = useState("");
@@ -180,7 +184,7 @@ export default function ProductDetailPage() {
     const targetOrderId = comment.orderId || pendingOrderId;
     if (!targetOrderId) return;
 
-    const targetItemId = pendingItemId;
+    const targetItemId = comment.itemId || pendingItemId;
     setCancellingId(comment.id);
     try {
       let res: Response;
@@ -491,7 +495,7 @@ export default function ProductDetailPage() {
                         {rv.reviewImages.map((img, i) => (
                           <Box key={i} component="img" src={img}
                             sx={{ width: 72, height: 72, objectFit: "cover", borderRadius: 1.5, border: "1px solid #e0e0e0", cursor: "pointer" }}
-                            onClick={() => window.open(img, "_blank")}
+                            onClick={() => setLightbox({ images: rv.reviewImages, index: i })}
                           />
                         ))}
                       </Stack>
@@ -540,48 +544,53 @@ export default function ProductDetailPage() {
                         (currentUserId && c.userId === currentUserId && (c.orderId || pendingOrderId)) ||
                         (userPhoneDigits && c.phoneDigits === userPhoneDigits && !!pendingOrderId);
                       const pickedUp = !!c.pickedUpAt;
+                      const isPending = c.orderStatus === "PENDING";
                       return (
-                        <>
-                          <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.3, flexWrap: "wrap" }}>
-                            <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
-                            <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
-                              sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
-                            {pickedUp && (
-                              <Chip label="픽업완료" size="small" color="success"
-                                sx={{ height: 18, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
-                            )}
-                            <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>{formatDT(c.createdAt)}</Typography>
-                          </Stack>
-                          {isMyComment && (
-                            <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}>
-                              {!pickedUp && c.orderId && c.itemId && (
-                                <Button
-                                  size="small" color="success" variant="outlined"
-                                  onClick={() => handlePickup(c)}
-                                  disabled={pickingUpId === c.id}
-                                  sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
-                                >
-                                  {pickingUpId === c.id ? "처리 중..." : "픽업 완료"}
-                                </Button>
-                              )}
-                              {!pickedUp && (
-                                <Button
-                                  size="small" color="error" variant="outlined"
-                                  onClick={() => handleCancelOrder(c)}
-                                  disabled={cancellingId === c.id}
-                                  sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
-                                >
-                                  {cancellingId === c.id ? "취소 중..." : "주문 취소"}
-                                </Button>
+                        <Stack direction="row" sx={{ alignItems: "flex-start", gap: 1 }}>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.3, flexWrap: "wrap" }}>
+                              <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
+                              <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
+                                sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
+                              {pickedUp && (
+                                <Chip label="픽업완료" size="small" color="success"
+                                  sx={{ height: 18, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
                               )}
                             </Stack>
-                          )}
-                        </>
+                            {c.content && (
+                              <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13, mt: 0.3 }}>{c.content}</Typography>
+                            )}
+                          </Box>
+                          <Stack sx={{ flexShrink: 0, alignItems: "flex-end", gap: 0.75 }}>
+                            <Typography variant="caption" sx={{ color: "text.disabled", whiteSpace: "nowrap" }}>{formatDT(c.createdAt)}</Typography>
+                            {isMyComment && !pickedUp && (
+                              <Stack direction="row" spacing={0.5}>
+                                {c.orderId && c.itemId && (
+                                  <Button
+                                    size="small" color="success" variant="outlined"
+                                    onClick={() => handlePickup(c)}
+                                    disabled={pickingUpId === c.id}
+                                    sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
+                                  >
+                                    {pickingUpId === c.id ? "처리 중..." : "픽업 완료"}
+                                  </Button>
+                                )}
+                                {isPending && (
+                                  <Button
+                                    size="small" color="error" variant="outlined"
+                                    onClick={() => handleCancelOrder(c)}
+                                    disabled={cancellingId === c.id}
+                                    sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
+                                  >
+                                    {cancellingId === c.id ? "취소 중..." : "주문 취소"}
+                                  </Button>
+                                )}
+                              </Stack>
+                            )}
+                          </Stack>
+                        </Stack>
                       );
                     })()}
-                    {c.content && (
-                      <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13, mt: 0.3 }}>{c.content}</Typography>
-                    )}
                   </Box>
                 </Stack>
 
@@ -673,6 +682,57 @@ export default function ProductDetailPage() {
             {ordering ? <CircularProgress size={20} color="inherit" /> : "주문 확정"}
           </Button>
         </DialogActions>
+      </Dialog>
+
+      {/* 이미지 라이트박스 */}
+      <Dialog
+        open={!!lightbox}
+        onClose={() => setLightbox(null)}
+        maxWidth={false}
+        slotProps={{ paper: { sx: { bgcolor: "transparent", boxShadow: "none", m: 1, overflow: "visible" } } }}
+        sx={{ "& .MuiDialog-container": { bgcolor: "rgba(0,0,0,0.88)" } }}
+      >
+        {lightbox && (
+          <Box sx={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <IconButton
+              onClick={() => setLightbox(null)}
+              sx={{ position: "absolute", top: -18, right: -18, bgcolor: "rgba(255,255,255,0.15)", color: "#fff", width: 32, height: 32, zIndex: 1, "&:hover": { bgcolor: "rgba(255,255,255,0.3)" } }}
+              size="small"
+            >
+              <CloseIcon sx={{ fontSize: 18 }} />
+            </IconButton>
+
+            {lightbox.images.length > 1 && (
+              <IconButton
+                onClick={() => setLightbox((l) => l ? { ...l, index: (l.index - 1 + l.images.length) % l.images.length } : null)}
+                sx={{ position: "absolute", left: -22, bgcolor: "rgba(255,255,255,0.15)", color: "#fff", "&:hover": { bgcolor: "rgba(255,255,255,0.3)" } }}
+              >
+                <NavigateBeforeIcon />
+              </IconButton>
+            )}
+
+            <Box
+              component="img"
+              src={lightbox.images[lightbox.index]}
+              sx={{ maxWidth: "85vw", maxHeight: "80vh", objectFit: "contain", borderRadius: 2, display: "block" }}
+            />
+
+            {lightbox.images.length > 1 && (
+              <IconButton
+                onClick={() => setLightbox((l) => l ? { ...l, index: (l.index + 1) % l.images.length } : null)}
+                sx={{ position: "absolute", right: -22, bgcolor: "rgba(255,255,255,0.15)", color: "#fff", "&:hover": { bgcolor: "rgba(255,255,255,0.3)" } }}
+              >
+                <NavigateNextIcon />
+              </IconButton>
+            )}
+
+            {lightbox.images.length > 1 && (
+              <Typography variant="caption" sx={{ position: "absolute", bottom: -28, left: "50%", transform: "translateX(-50%)", color: "rgba(255,255,255,0.7)", fontSize: 12 }}>
+                {lightbox.index + 1} / {lightbox.images.length}
+              </Typography>
+            )}
+          </Box>
+        )}
       </Dialog>
 
       <Snackbar open={snack.open} autoHideDuration={2500} onClose={() => setSnack((s) => ({ ...s, open: false }))} anchorOrigin={{ vertical: "bottom", horizontal: "center" }} sx={{ bottom: 100 }}>

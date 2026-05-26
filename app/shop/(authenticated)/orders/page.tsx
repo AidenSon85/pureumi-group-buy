@@ -50,6 +50,7 @@ export default function ShopOrdersPage() {
   const [pickingUp, setPickingUp] = useState(false);
   const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({ open: false, msg: "", severity: "success" });
   const [reviewTarget, setReviewTarget] = useState<{ productId: string; productName: string; productImageUrl: string | null } | null>(null);
+  const [reviewedProductIds, setReviewedProductIds] = useState<Set<string>>(new Set());
   const [userName, setUserName] = useState("");
   const router = useRouter();
 
@@ -275,13 +276,17 @@ export default function ShopOrdersPage() {
                               ) : pickedUp ? (
                                 <>
                                   <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatWon(item.amount)}</Typography>
-                                  <Button
-                                    size="small" color="primary" variant="outlined"
-                                    sx={{ fontSize: 10, py: 0.2, px: 0.75, minWidth: 0, lineHeight: 1.4, fontWeight: 700 }}
-                                    onClick={(e) => { e.stopPropagation(); setReviewTarget({ productId: item.product.id, productName: item.product.name, productImageUrl: item.product.imageUrl }); }}
-                                  >
-                                    리뷰 작성
-                                  </Button>
+                                  {reviewedProductIds.has(item.product.id) ? (
+                                    <Chip label="리뷰 완료" size="small" color="success" variant="outlined" sx={{ height: 20, fontSize: 10, fontWeight: 700 }} />
+                                  ) : (
+                                    <Button
+                                      size="small" color="primary" variant="outlined"
+                                      sx={{ fontSize: 10, py: 0.2, px: 0.75, minWidth: 0, lineHeight: 1.4, fontWeight: 700 }}
+                                      onClick={(e) => { e.stopPropagation(); setReviewTarget({ productId: item.product.id, productName: item.product.name, productImageUrl: item.product.imageUrl }); }}
+                                    >
+                                      리뷰 작성
+                                    </Button>
+                                  )}
                                 </>
                               ) : (
                                 <>
@@ -439,6 +444,7 @@ export default function ShopOrdersPage() {
         productImageUrl={reviewTarget?.productImageUrl}
         userName={userName}
         onSuccess={() => {
+          if (reviewTarget) setReviewedProductIds((prev) => new Set(prev).add(reviewTarget.productId));
           setSnack({ open: true, msg: "리뷰가 등록되었습니다!", severity: "success" });
           setReviewTarget(null);
         }}

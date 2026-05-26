@@ -36,18 +36,26 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   });
 
   const orderIds = comments.map((c) => c.orderId).filter(Boolean) as string[];
-  const orderItems = orderIds.length
-    ? await prisma.orderItem.findMany({
-        where: { orderId: { in: orderIds }, productId: id },
-        select: { id: true, orderId: true, pickedUpAt: true },
-      })
-    : [];
+  const [orderItems, orderStatuses] = orderIds.length
+    ? await Promise.all([
+        prisma.orderItem.findMany({
+          where: { orderId: { in: orderIds }, productId: id },
+          select: { id: true, orderId: true, pickedUpAt: true },
+        }),
+        prisma.order.findMany({
+          where: { id: { in: orderIds } },
+          select: { id: true, status: true },
+        }),
+      ])
+    : [[], []];
   const itemMap = new Map(orderItems.map((i) => [i.orderId, { itemId: i.id, pickedUpAt: i.pickedUpAt }]));
+  const statusMap = new Map(orderStatuses.map((o) => [o.id, o.status]));
 
   return NextResponse.json(comments.map((c) => ({
     ...c,
     itemId: c.orderId ? (itemMap.get(c.orderId)?.itemId ?? null) : null,
     pickedUpAt: c.orderId ? (itemMap.get(c.orderId)?.pickedUpAt ?? null) : null,
+    orderStatus: c.orderId ? (statusMap.get(c.orderId) ?? null) : null,
   })));
 }
 
