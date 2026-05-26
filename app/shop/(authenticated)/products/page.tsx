@@ -350,9 +350,11 @@ export default function ShopProductsPage() {
                         {!soldOut && p.stock <= 30 && (
                           <Typography sx={{ fontSize: 12, color: "#e65100", fontWeight: 600, mt: 0.3 }}>{p.stock}개 남았어요!</Typography>
                         )}
-                        {p.pickupStartAt && (
+                        {!p.groupBuyEndAt ? (
+                          <Chip label="상시판매" size="small" color="info" sx={{ mt: 0.5, height: 20, fontSize: 11, fontWeight: 700 }} />
+                        ) : p.pickupStartAt ? (
                           <Typography sx={{ fontSize: 12, color: "text.secondary", mt: 0.3 }}>픽업 {pickupLabel(p.pickupStartAt)} 가능</Typography>
-                        )}
+                        ) : null}
                       </Box>
                     </Stack>
                     {/* 하단: 상세보기 + 수량 */}

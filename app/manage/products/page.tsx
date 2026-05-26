@@ -48,6 +48,7 @@ const emptyForm = () => ({
   groupBuyStartAt: null as Date | null,
   groupBuyEndAt: null as Date | null,
   pickupStartAt: null as Date | null,
+  isAlwaysOn: false,
 });
 
 const formatWon = (n: number) => `₩${n.toLocaleString()}`;
@@ -128,6 +129,7 @@ export default function ProductsPage() {
       groupBuyStartAt: p.groupBuyStartAt ? new Date(p.groupBuyStartAt) : null,
       groupBuyEndAt: p.groupBuyEndAt ? new Date(p.groupBuyEndAt) : null,
       pickupStartAt: p.pickupStartAt ? new Date(p.pickupStartAt) : null,
+      isAlwaysOn: !p.groupBuyEndAt,
     });
     setError(""); setDrawerOpen(true);
   };
@@ -209,7 +211,7 @@ export default function ProductsPage() {
       factoryIds: form.factoryIds,
       categoryId: form.categoryId || null,
       groupBuyStartAt: form.groupBuyStartAt ? form.groupBuyStartAt.toISOString() : null,
-      groupBuyEndAt: form.groupBuyEndAt ? form.groupBuyEndAt.toISOString() : null,
+      groupBuyEndAt: form.isAlwaysOn ? null : (form.groupBuyEndAt ? form.groupBuyEndAt.toISOString() : null),
       pickupStartAt: form.pickupStartAt ? form.pickupStartAt.toISOString() : null,
     };
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -333,10 +335,12 @@ export default function ProductsPage() {
                           </Box>
                         </TableCell>
                         <TableCell>
-                          {p.groupBuyStartAt ? (
+                          {!p.groupBuyEndAt && p.isActive ? (
+                            <Chip label="상시" size="small" color="info" sx={{ height: 18, fontSize: 10, fontWeight: 700 }} />
+                          ) : p.groupBuyStartAt ? (
                             <Typography variant="caption" sx={{ color: "primary.main" }}>
                               {formatDateShort(p.groupBuyStartAt)}
-                              {p.groupBuyEndAt ? ` ~ ${formatDateShort(p.groupBuyEndAt)}` : " ~"}
+                              {p.groupBuyEndAt ? ` ~ ${formatDateShort(p.groupBuyEndAt)}` : ""}
                             </Typography>
                           ) : (
                             <Typography variant="caption" sx={{ color: "text.disabled" }}>-</Typography>
@@ -408,12 +412,16 @@ export default function ProductsPage() {
                           </Box>
                         )}
                         <CardContent sx={{ flex: 1, display: "flex", flexDirection: "column", p: { xs: 1, sm: 1.5 }, "&:last-child": { pb: { xs: 1, sm: 1.5 } } }}>
-                          {/* 매장 칩 */}
+                          {/* 매장 칩 + 상시 뱃지 */}
                           <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.5, mb: 0.5 }}>
                             {getFactoryNames(p).map((name, i) => (
                               <Chip key={i} label={name} size="small" color="primary" variant="outlined"
                                 sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
                             ))}
+                            {!p.groupBuyEndAt && p.isActive && (
+                              <Chip label="상시" size="small" color="info"
+                                sx={{ height: 18, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
+                            )}
                           </Stack>
                           {/* 제품명 */}
                           <Typography variant="subtitle2" sx={{
@@ -552,6 +560,24 @@ export default function ProductsPage() {
             <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mb: 1.5 }}>
               시작일이 되면 고객에게 자동으로 노출됩니다. 설정하지 않으면 즉시 노출됩니다.
             </Typography>
+
+            <FormControlLabel
+              sx={{ mb: 1.5 }}
+              control={
+                <Checkbox
+                  checked={form.isAlwaysOn}
+                  onChange={(e) => setForm({ ...form, isAlwaysOn: e.target.checked, groupBuyEndAt: e.target.checked ? null : form.groupBuyEndAt })}
+                  size="small"
+                />
+              }
+              label={
+                <Box>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>상시 판매</Typography>
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>종료일 없이 직접 비활성화할 때까지 계속 판매</Typography>
+                </Box>
+              }
+            />
+
             <Grid container spacing={2}>
               <Grid size={6}>
                 <DatePicker
@@ -564,9 +590,10 @@ export default function ProductsPage() {
               <Grid size={6}>
                 <DatePicker
                   label="공구 종료일"
-                  value={form.groupBuyEndAt}
+                  value={form.isAlwaysOn ? null : form.groupBuyEndAt}
                   onChange={(v) => setForm({ ...form, groupBuyEndAt: v })}
-                  slotProps={{ textField: { fullWidth: true } }}
+                  disabled={form.isAlwaysOn}
+                  slotProps={{ textField: { fullWidth: true, helperText: form.isAlwaysOn ? "상시 판매 중" : undefined } }}
                   minDate={form.groupBuyStartAt || undefined}
                 />
               </Grid>

@@ -313,10 +313,17 @@ export default function ProductDetailPage() {
           재고 {product.stock}{product.unit}
         </Typography>
 
-        {(product.pickupStartAt || product.groupBuyEndAt) && (
+        {(product.pickupStartAt || product.groupBuyEndAt || !product.groupBuyEndAt) && (
           <>
             <Divider sx={{ my: 1.5 }} />
             <Stack spacing={0.75}>
+              {!product.groupBuyEndAt && (
+                <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
+                  <CalendarMonthOutlinedIcon sx={{ fontSize: 15, color: "info.main" }} />
+                  <Chip label="상시판매" size="small" color="info" sx={{ height: 20, fontSize: 11, fontWeight: 700 }} />
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>종료일 없이 계속 판매 중</Typography>
+                </Stack>
+              )}
               {product.pickupStartAt && (
                 <Stack direction="row" sx={{ alignItems: "center", gap: 1 }}>
                   <LocalShippingOutlinedIcon sx={{ fontSize: 15, color: "text.secondary" }} />
@@ -590,8 +597,8 @@ export default function ProductDetailPage() {
                                   </Button>
                                 ) : null}
                                 {pickedUp && alreadyReviewed && (
-                                  <Button size="small" variant="outlined" color="primary" disableRipple
-                                    sx={{ fontSize: 11, fontWeight: 600, height: 24, minHeight: 24, py: 0, minWidth: 0, pointerEvents: "none" }}>
+                                  <Button size="small" variant="outlined" disableRipple
+                                    sx={{ fontSize: 11, fontWeight: 600, height: 24, minHeight: 24, py: 0, minWidth: 0, pointerEvents: "none", color: "#7b1fa2", borderColor: "#7b1fa2" }}>
                                     리뷰완료
                                   </Button>
                                 )}
