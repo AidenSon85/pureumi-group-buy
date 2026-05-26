@@ -327,7 +327,7 @@ export default function ShopProductsPage() {
                         {p.imageUrl
                           ? <CardMedia component="img" image={p.imageUrl} alt={p.name} sx={{ width: 90, height: 90, objectFit: "cover", opacity: soldOut ? 0.5 : 1 }} />
                           : <Box sx={{ width: 90, height: 90, display: "flex", alignItems: "center", justifyContent: "center" }}><ImageIcon sx={{ fontSize: 32, color: "#ccc" }} /></Box>}
-                        <Stack sx={{ position: "absolute", top: 4, left: 4, gap: 0.5, alignItems: "flex-start" }}>
+                        <Stack direction="row" sx={{ position: "absolute", top: 4, left: 4, gap: 0.5, flexWrap: "wrap" }}>
                           {p.salePrice && <Chip label="SALE" size="small" color="error" sx={{ fontWeight: 700, height: 16, fontSize: 10 }} />}
                           {!p.groupBuyEndAt && !soldOut && <Chip label="상시" size="small" color="info" sx={{ fontWeight: 700, height: 16, fontSize: 10 }} />}
                         </Stack>
@@ -414,7 +414,7 @@ export default function ShopProductsPage() {
                       {p.imageUrl
                         ? <Box component="img" src={p.imageUrl} alt={p.name} sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: soldOut ? 0.5 : 1 }} />
                         : <Box sx={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" }}><ImageIcon sx={{ fontSize: { xs: 32, sm: 40 }, color: "#ccc" }} /></Box>}
-                      <Stack sx={{ position: "absolute", top: 6, left: 6, gap: 0.5, alignItems: "flex-start" }}>
+                      <Stack direction="row" sx={{ position: "absolute", top: 6, left: 6, gap: 0.5, flexWrap: "wrap" }}>
                         {p.salePrice && <Chip label="SALE" size="small" color="error" sx={{ fontWeight: 700, height: 18, fontSize: 11 }} />}
                         {!p.groupBuyEndAt && !soldOut && <Chip label="상시판매" size="small" color="info" sx={{ fontWeight: 700, height: 18, fontSize: 11 }} />}
                       </Stack>
