@@ -26,7 +26,7 @@ interface Product {
 interface Comment {
   id: string; name: string; phoneDigits: string; content: string | null;
   isAdminReply: boolean; createdAt: string; userId: string | null; orderId: string | null;
-  pickedUpAt: string | null;
+  pickedUpAt: string | null; itemId: string | null;
   replies?: Comment[];
 }
 interface Review {
@@ -199,10 +199,10 @@ export default function ProductDetailPage() {
   };
 
   const handlePickup = async (comment: Comment) => {
-    if (!comment.orderId) return;
+    if (!comment.orderId || !comment.itemId) return;
     setPickingUpId(comment.id);
     try {
-      const res = await fetch(`/api/shop/orders/${comment.orderId}`, {
+      const res = await fetch(`/api/shop/orders/${comment.orderId}/items/${comment.itemId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "pickup" }),
@@ -528,7 +528,7 @@ export default function ProductDetailPage() {
                           </Stack>
                           {isMyComment && (
                             <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}>
-                              {!pickedUp && c.orderId && (
+                              {!pickedUp && c.orderId && c.itemId && (
                                 <Button
                                   size="small" color="success" variant="outlined"
                                   onClick={() => handlePickup(c)}

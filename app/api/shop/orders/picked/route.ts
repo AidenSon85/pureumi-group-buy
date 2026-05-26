@@ -11,10 +11,12 @@ export async function GET(req: NextRequest) {
   const productId = req.nextUrl.searchParams.get("productId");
   if (!productId) return NextResponse.json({ canReview: false });
 
+  // 이 상품의 OrderItem 중 pickedUpAt이 있는 것 확인
   const item = await prisma.orderItem.findFirst({
     where: {
       productId,
-      order: { userId: uid, pickedUpAt: { not: null } },
+      pickedUpAt: { not: null },
+      order: { userId: uid },
     },
   });
 

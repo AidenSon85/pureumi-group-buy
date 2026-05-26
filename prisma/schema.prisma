@@ -145,11 +145,12 @@ model Order {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  quantity  Int
-  price     Int
-  amount    Int
-  status    String  @default("ACTIVE")
+  id         String    @id @default(cuid())
+  quantity   Int
+  price      Int
+  amount     Int
+  status     String    @default("ACTIVE")
+  pickedUpAt DateTime?
 
   orderId   String
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)

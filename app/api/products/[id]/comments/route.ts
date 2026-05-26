@@ -36,14 +36,18 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   });
 
   const orderIds = comments.map((c) => c.orderId).filter(Boolean) as string[];
-  const orders = orderIds.length
-    ? await prisma.order.findMany({ where: { id: { in: orderIds } }, select: { id: true, pickedUpAt: true } })
+  const orderItems = orderIds.length
+    ? await prisma.orderItem.findMany({
+        where: { orderId: { in: orderIds }, productId: id },
+        select: { id: true, orderId: true, pickedUpAt: true },
+      })
     : [];
-  const orderMap = new Map(orders.map((o) => [o.id, o.pickedUpAt]));
+  const itemMap = new Map(orderItems.map((i) => [i.orderId, { itemId: i.id, pickedUpAt: i.pickedUpAt }]));
 
   return NextResponse.json(comments.map((c) => ({
     ...c,
-    pickedUpAt: c.orderId ? (orderMap.get(c.orderId) ?? null) : null,
+    itemId: c.orderId ? (itemMap.get(c.orderId)?.itemId ?? null) : null,
+    pickedUpAt: c.orderId ? (itemMap.get(c.orderId)?.pickedUpAt ?? null) : null,
   })));
 }
 
@@ -66,7 +70,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (!uid) return NextResponse.json({ error: "로그인이 필요합니다" }, { status: 401 });
 
     const pickedItem = await prisma.orderItem.findFirst({
-      where: { productId: id, order: { userId: uid, pickedUpAt: { not: null } } },
+      where: { productId: id, pickedUpAt: { not: null }, order: { userId: uid } },
     });
     if (!pickedItem) return NextResponse.json({ error: "픽업 완료 후 리뷰 작성이 가능합니다" }, { status: 403 });
 

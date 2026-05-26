@@ -14,12 +14,12 @@ import { useRouter } from "next/navigation";
 
 interface OrderItem {
   id: string; quantity: number; price: number; amount: number; status: string;
+  pickedUpAt: string | null;
   product: { name: string; imageUrl: string | null; id: string };
 }
 interface Order {
   id: string; orderNo: string; status: string; totalAmount: number;
   orderedAt: string; deliveryAddr: string | null; memo: string | null;
-  pickedUpAt: string | null;
   factory: { name: string }; items: OrderItem[];
 }
 
@@ -29,10 +29,6 @@ const STATUS_MAP: Record<string, { label: string; color: "default" | "info" | "w
   SHIPPED:   { label: "배송중", color: "warning" },
   DELIVERED: { label: "완료",   color: "success" },
   CANCELLED: { label: "취소됨", color: "error" },
-};
-const formatDateShort = (s: string) => {
-  const d = new Date(s);
-  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 };
 
 const formatWon = (n: number) => `${n.toLocaleString()}원`;
@@ -48,8 +44,8 @@ export default function ShopOrdersPage() {
   const [cancelTarget, setCancelTarget] = useState<{ orderId: string; itemId: string; name: string } | null>(null);
   const [cancelOrderTarget, setCancelOrderTarget] = useState<{ orderId: string; orderNo: string } | null>(null);
   const [cancelling, setCancelling] = useState(false);
-  const [pickingUp, setPickingUp] = useState<string | null>(null);
-  const [pickupConfirm, setPickupConfirm] = useState<{ orderId: string; orderNo: string } | null>(null);
+  const [pickupTarget, setPickupTarget] = useState<{ orderId: string; itemId: string; name: string } | null>(null);
+  const [pickingUp, setPickingUp] = useState(false);
   const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({ open: false, msg: "", severity: "success" });
   const router = useRouter();
 
@@ -76,22 +72,23 @@ export default function ShopOrdersPage() {
     } finally { setCancelling(false); setCancelOrderTarget(null); }
   };
 
-  const handlePickupConfirm = async () => {
-    if (!pickupConfirm) return;
-    setPickingUp(pickupConfirm.orderId);
+  const handlePickupItem = async () => {
+    if (!pickupTarget) return;
+    setPickingUp(true);
     try {
-      const res = await fetch(`/api/shop/orders/${pickupConfirm.orderId}`, {
+      const res = await fetch(`/api/shop/orders/${pickupTarget.orderId}/items/${pickupTarget.itemId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "pickup" }),
       });
       if (res.ok) {
-        setSnack({ open: true, msg: "픽업 완료로 처리되었습니다", severity: "success" });
+        setSnack({ open: true, msg: `${pickupTarget.name} 픽업 완료 처리되었습니다`, severity: "success" });
         loadOrders();
       } else {
-        setSnack({ open: true, msg: "처리 실패", severity: "error" });
+        const d = await res.json();
+        setSnack({ open: true, msg: d.error || "처리 실패", severity: "error" });
       }
-    } finally { setPickingUp(null); setPickupConfirm(null); }
+    } finally { setPickingUp(false); setPickupTarget(null); }
   };
 
   const handleCancelItem = async () => {
@@ -143,19 +140,21 @@ export default function ShopOrdersPage() {
             const activeItems = o.items.filter((i) => i.status !== "CANCELLED");
             const hasActive = o.status !== "CANCELLED" && activeItems.length > 0;
             const hasCancelledItem = o.items.some((i) => i.status === "CANCELLED") && activeItems.length > 0;
+            const allPickedUp = activeItems.length > 0 && activeItems.every((i) => !!i.pickedUpAt);
+            const somePickedUp = activeItems.some((i) => !!i.pickedUpAt);
             const expanded = expandedId === o.id;
             const st = STATUS_MAP[o.status] || { label: o.status, color: "default" as const };
+            const anyPickedUp = activeItems.some((i) => !!i.pickedUpAt);
 
             return (
               <Paper key={o.id} elevation={0} sx={{ border: "1px solid #e0e0e0", borderRadius: 2, overflow: "hidden" }}>
-                {/* 카드 헤더 - 클릭으로 펼침 */}
+                {/* 카드 헤더 */}
                 <Box
                   onClick={() => setExpandedId(expanded ? null : o.id)}
                   sx={{ px: 2, py: 1.5, cursor: "pointer", "&:active": { bgcolor: "#f9f9f9" } }}
                 >
                   <Stack direction="row" sx={{ alignItems: "flex-start", justifyContent: "space-between" }}>
                     <Box sx={{ minWidth: 0, flex: 1, mr: 1 }}>
-                      {/* 주문번호 + 매장 */}
                       <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 0.5 }}>
                         <Typography variant="caption" sx={{ fontFamily: "monospace", fontWeight: 700, color: "text.secondary", fontSize: 11 }}>
                           {o.orderNo}
@@ -163,12 +162,13 @@ export default function ShopOrdersPage() {
                         <Typography variant="caption" sx={{ color: "text.disabled" }}>·</Typography>
                         <Typography variant="caption" sx={{ color: "text.secondary" }}>{o.factory.name}</Typography>
                       </Stack>
-                      {/* 주문일시 */}
                       <Typography variant="caption" sx={{ color: "text.disabled" }}>{formatDate(o.orderedAt)}</Typography>
                     </Box>
                     <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", flexShrink: 0 }}>
-                      {o.pickedUpAt ? (
+                      {allPickedUp ? (
                         <Chip label="픽업완료" size="small" color="success" sx={{ fontWeight: 700, fontSize: 11 }} />
+                      ) : somePickedUp ? (
+                        <Chip label="일부픽업" size="small" color="warning" sx={{ fontWeight: 700, fontSize: 11 }} />
                       ) : (
                         <Chip label={st.label} size="small" color={st.color} sx={{ fontWeight: 600, fontSize: 11 }} />
                       )}
@@ -220,6 +220,7 @@ export default function ShopOrdersPage() {
                     <Stack spacing={1.5} sx={{ mt: 1.5 }}>
                       {o.items.map((item) => {
                         const cancelled = o.status === "CANCELLED" || item.status === "CANCELLED";
+                        const pickedUp = !!item.pickedUpAt;
                         return (
                           <Stack key={item.id} direction="row" spacing={1.5} sx={{ alignItems: "center", opacity: cancelled ? 0.45 : 1 }}>
                             <Avatar
@@ -246,17 +247,33 @@ export default function ShopOrdersPage() {
                             <Stack sx={{ alignItems: "flex-end", flexShrink: 0 }} spacing={0.5}>
                               {cancelled ? (
                                 <Chip label="취소" size="small" color="error" variant="outlined" sx={{ height: 20, fontSize: 10 }} />
+                              ) : pickedUp ? (
+                                <>
+                                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatWon(item.amount)}</Typography>
+                                  <Chip label="픽업완료" size="small" color="success" sx={{ height: 20, fontSize: 10, fontWeight: 700 }} />
+                                </>
                               ) : (
-                                <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatWon(item.amount)}</Typography>
-                              )}
-                              {o.status === "PENDING" && !cancelled && (
-                                <Button
-                                  size="small" color="error" variant="outlined"
-                                  sx={{ fontSize: 11, py: 0.2, px: 1, minWidth: 0, lineHeight: 1.4 }}
-                                  onClick={(e) => { e.stopPropagation(); setCancelTarget({ orderId: o.id, itemId: item.id, name: item.product.name }); }}
-                                >
-                                  취소
-                                </Button>
+                                <>
+                                  <Typography variant="body2" sx={{ fontWeight: 700 }}>{formatWon(item.amount)}</Typography>
+                                  <Stack direction="row" spacing={0.5}>
+                                    <Button
+                                      size="small" color="success" variant="contained"
+                                      sx={{ fontSize: 10, py: 0.2, px: 0.75, minWidth: 0, lineHeight: 1.4, fontWeight: 700 }}
+                                      onClick={(e) => { e.stopPropagation(); setPickupTarget({ orderId: o.id, itemId: item.id, name: item.product.name }); }}
+                                    >
+                                      픽업완료
+                                    </Button>
+                                    {o.status === "PENDING" && (
+                                      <Button
+                                        size="small" color="error" variant="outlined"
+                                        sx={{ fontSize: 10, py: 0.2, px: 0.75, minWidth: 0, lineHeight: 1.4 }}
+                                        onClick={(e) => { e.stopPropagation(); setCancelTarget({ orderId: o.id, itemId: item.id, name: item.product.name }); }}
+                                      >
+                                        취소
+                                      </Button>
+                                    )}
+                                  </Stack>
+                                </>
                               )}
                             </Stack>
                           </Stack>
@@ -280,36 +297,16 @@ export default function ShopOrdersPage() {
                       </Stack>
                     )}
 
-                    {/* 픽업완료 / 주문취소 버튼 */}
-                    {o.status !== "CANCELLED" && (
-                      <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #ececec" }}>
-                        {o.pickedUpAt ? (
-                          <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", justifyContent: "center", py: 0.5 }}>
-                            <Typography variant="caption" sx={{ color: "success.main", fontWeight: 700 }}>
-                              ✓ 픽업완료 ({formatDateShort(o.pickedUpAt)})
-                            </Typography>
-                          </Stack>
-                        ) : (
-                          <Stack spacing={1}>
-                            <Button
-                              size="small" color="success" variant="contained" fullWidth
-                              sx={{ fontSize: 13, py: 0.9, fontWeight: 700, borderRadius: 2 }}
-                              disabled={pickingUp === o.id}
-                              onClick={() => setPickupConfirm({ orderId: o.id, orderNo: o.orderNo })}
-                            >
-                              {pickingUp === o.id ? "처리 중..." : "픽업 완료 확인"}
-                            </Button>
-                            {o.status === "PENDING" && (
-                              <Button
-                                size="small" color="error" variant="outlined" fullWidth
-                                sx={{ fontSize: 13, py: 0.8 }}
-                                onClick={() => setCancelOrderTarget({ orderId: o.id, orderNo: o.orderNo })}
-                              >
-                                주문 전체 취소
-                              </Button>
-                            )}
-                          </Stack>
-                        )}
+                    {/* 주문 전체 취소 (픽업된 상품 없고 PENDING일 때만) */}
+                    {o.status === "PENDING" && !anyPickedUp && (
+                      <Box sx={{ mt: 1.5, pt: 1.5, borderTop: "1px solid #ececec" }}>
+                        <Button
+                          size="small" color="error" variant="outlined" fullWidth
+                          sx={{ fontSize: 13, py: 0.8 }}
+                          onClick={() => setCancelOrderTarget({ orderId: o.id, orderNo: o.orderNo })}
+                        >
+                          주문 전체 취소
+                        </Button>
                       </Box>
                     )}
                   </Box>
@@ -320,20 +317,20 @@ export default function ShopOrdersPage() {
         </Stack>
       )}
 
-      {/* 픽업 완료 확인 */}
-      <Dialog open={!!pickupConfirm} onClose={() => setPickupConfirm(null)} fullWidth maxWidth="xs">
+      {/* 픽업 완료 확인 다이얼로그 */}
+      <Dialog open={!!pickupTarget} onClose={() => setPickupTarget(null)} fullWidth maxWidth="xs">
         <DialogTitle sx={{ fontSize: 16, fontWeight: 700 }}>픽업 완료 확인</DialogTitle>
         <DialogContent>
           <Typography variant="body2">
-            <strong>{pickupConfirm?.orderNo}</strong> 주문을 픽업 완료로 처리하시겠습니까?
+            <strong>{pickupTarget?.name}</strong> 상품을 픽업 완료로 처리하시겠습니까?
           </Typography>
           <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
             직접 수령한 경우에만 확인해 주세요.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 2.5, pb: 2 }}>
-          <Button onClick={() => setPickupConfirm(null)} sx={{ flex: 1 }}>아니요</Button>
-          <Button color="success" variant="contained" onClick={handlePickupConfirm} disabled={!!pickingUp} sx={{ flex: 1 }}>
+          <Button onClick={() => setPickupTarget(null)} sx={{ flex: 1 }}>아니요</Button>
+          <Button color="success" variant="contained" onClick={handlePickupItem} disabled={pickingUp} sx={{ flex: 1 }}>
             {pickingUp ? "처리 중..." : "픽업 완료"}
           </Button>
         </DialogActions>
