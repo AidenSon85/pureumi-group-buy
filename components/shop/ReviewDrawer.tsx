@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   Drawer, Box, Typography, Stack, Button, TextField, IconButton,
   CircularProgress, Rating, Divider, Avatar,
@@ -9,6 +9,8 @@ import AddPhotoAlternateOutlinedIcon from "@mui/icons-material/AddPhotoAlternate
 import ClearIcon from "@mui/icons-material/Clear";
 import StarIcon from "@mui/icons-material/Star";
 
+type ImageItem = { file: File; preview: string } | { url: string; preview: string };
+
 interface Props {
   open: boolean;
   onClose: () => void;
@@ -17,6 +19,11 @@ interface Props {
   productImageUrl?: string | null;
   userName: string;
   onSuccess: () => void;
+  editMode?: boolean;
+  reviewId?: string;
+  initialRating?: number | null;
+  initialContent?: string;
+  initialImages?: string[];
 }
 
 const RATING_LABELS: Record<number, string> = {
@@ -27,15 +34,31 @@ const RATING_LABELS: Record<number, string> = {
   5: "최고예요!",
 };
 
-export default function ReviewDrawer({ open, onClose, productId, productName, productImageUrl, userName, onSuccess }: Props) {
+export default function ReviewDrawer({ open, onClose, productId, productName, productImageUrl, userName, onSuccess, editMode, reviewId, initialRating, initialContent, initialImages }: Props) {
   const [rating, setRating] = useState<number | null>(null);
   const [hoverRating, setHoverRating] = useState<number>(-1);
   const [content, setContent] = useState("");
-  const [images, setImages] = useState<{ file: File; preview: string }[]>([]);
+  const [images, setImages] = useState<ImageItem[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (open && editMode) {
+      setRating(initialRating ?? null);
+      setContent(initialContent ?? "");
+      setImages((initialImages ?? []).map((url) => ({ url, preview: url })));
+      setHoverRating(-1);
+      setError("");
+    } else if (!open) {
+      setRating(null);
+      setHoverRating(-1);
+      setContent("");
+      setImages([]);
+      setError("");
+    }
+  }, [open]);
 
   const reset = () => {
     setRating(null);
@@ -63,7 +86,8 @@ export default function ReviewDrawer({ open, onClose, productId, productName, pr
 
   const handleRemoveImage = (index: number) => {
     setImages((prev) => {
-      URL.revokeObjectURL(prev[index].preview);
+      const img = prev[index];
+      if ("file" in img) URL.revokeObjectURL(img.preview);
       return prev.filter((_, i) => i !== index);
     });
   };
@@ -71,12 +95,16 @@ export default function ReviewDrawer({ open, onClose, productId, productName, pr
   const uploadImages = async (): Promise<string[]> => {
     const urls: string[] = [];
     for (const img of images) {
-      const fd = new FormData();
-      fd.append("file", img.file);
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      if (!res.ok) throw new Error("이미지 업로드 실패");
-      const data = await res.json();
-      urls.push(data.url);
+      if ("url" in img) {
+        urls.push(img.url);
+      } else {
+        const fd = new FormData();
+        fd.append("file", img.file);
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        if (!res.ok) throw new Error("이미지 업로드 실패");
+        const data = await res.json();
+        urls.push(data.url);
+      }
     }
     return urls;
   };
@@ -87,21 +115,22 @@ export default function ReviewDrawer({ open, onClose, productId, productName, pr
     setError("");
     setSubmitting(true);
     try {
-      setUploading(images.length > 0);
-      const uploadedUrls = images.length > 0 ? await uploadImages() : [];
+      const hasNewImages = images.some((img) => "file" in img);
+      setUploading(hasNewImages);
+      const uploadedUrls = await uploadImages();
       setUploading(false);
 
-      const res = await fetch(`/api/products/${productId}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: userName,
-          content: content.trim(),
-          isReview: true,
-          rating,
-          reviewImages: uploadedUrls,
-        }),
-      });
+      const res = editMode && reviewId
+        ? await fetch(`/api/shop/reviews/${reviewId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ rating, content: content.trim(), reviewImages: uploadedUrls }),
+          })
+        : await fetch(`/api/products/${productId}/comments`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name: userName, content: content.trim(), isReview: true, rating, reviewImages: uploadedUrls }),
+          });
 
       if (res.ok) {
         reset();
@@ -130,7 +159,7 @@ export default function ReviewDrawer({ open, onClose, productId, productName, pr
     >
       {/* 헤더 */}
       <Stack direction="row" sx={{ alignItems: "center", justifyContent: "space-between", px: 2.5, py: 2, borderBottom: "1px solid #f0f0f0", flexShrink: 0 }}>
-        <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 16 }}>리뷰 작성</Typography>
+        <Typography variant="h6" sx={{ fontWeight: 700, fontSize: 16 }}>{editMode ? "리뷰 수정" : "리뷰 작성"}</Typography>
         <IconButton size="small" onClick={handleClose}><CloseIcon /></IconButton>
       </Stack>
 
@@ -254,7 +283,7 @@ export default function ReviewDrawer({ open, onClose, productId, productName, pr
                 <CircularProgress size={16} color="inherit" />
                 <span>{uploading ? "업로드 중..." : "등록 중..."}</span>
               </Stack>
-            ) : "리뷰 등록"}
+            ) : editMode ? "수정 완료" : "리뷰 등록"}
           </Button>
         </Stack>
       </Box>

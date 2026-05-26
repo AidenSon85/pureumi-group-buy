@@ -1,17 +1,19 @@
 "use client";
 import { useState, useEffect } from "react";
 import {
-  Box, Typography, Stack, Paper, Avatar, Chip, CircularProgress,
-  Divider, IconButton, Dialog,
+  Box, Typography, Stack, Paper, Avatar, CircularProgress,
+  Divider, IconButton, Dialog, Button,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
+import EditOutlinedIcon from "@mui/icons-material/EditOutlined";
 import StarIcon from "@mui/icons-material/Star";
 import StarBorderIcon from "@mui/icons-material/StarBorder";
 import CloseIcon from "@mui/icons-material/Close";
 import NavigateBeforeIcon from "@mui/icons-material/NavigateBefore";
 import NavigateNextIcon from "@mui/icons-material/NavigateNext";
 import { useRouter } from "next/navigation";
+import ReviewDrawer from "@/components/shop/ReviewDrawer";
 
 interface Review {
   id: string;
@@ -25,17 +27,34 @@ interface Review {
 const formatDate = (s: string) =>
   new Date(s).toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
 
+interface EditTarget {
+  id: string;
+  productId: string;
+  productName: string;
+  productImageUrl: string | null;
+  rating: number | null;
+  content: string;
+  images: string[];
+}
+
 export default function MyReviewsPage() {
   const router = useRouter();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [lightbox, setLightbox] = useState<{ images: string[]; index: number } | null>(null);
+  const [editTarget, setEditTarget] = useState<EditTarget | null>(null);
+  const [userName, setUserName] = useState("");
 
-  useEffect(() => {
+  const loadReviews = () => {
     fetch("/api/shop/reviews")
       .then((r) => r.json())
       .then((d) => { setReviews(d || []); setLoading(false); })
       .catch(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadReviews();
+    fetch("/api/users/me").then((r) => r.json()).then((u) => { if (u?.name) setUserName(u.name); });
   }, []);
 
   return (
@@ -64,21 +83,28 @@ export default function MyReviewsPage() {
               {/* 상품 정보 */}
               <Stack
                 direction="row" spacing={1.5}
-                sx={{ px: 2, py: 1.5, bgcolor: "#f8f9fa", alignItems: "center", cursor: "pointer", "&:active": { bgcolor: "#f0f0f0" } }}
-                onClick={() => router.push(`/shop/products/${rv.product.id}`)}
+                sx={{ px: 2, py: 1.5, bgcolor: "#f8f9fa", alignItems: "center" }}
               >
-                {rv.product.imageUrl ? (
-                  <Box component="img" src={rv.product.imageUrl}
-                    sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: "cover", flexShrink: 0 }} />
-                ) : (
-                  <Avatar variant="rounded" sx={{ width: 44, height: 44, bgcolor: "#e0e0e0", flexShrink: 0 }} />
-                )}
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main" }} noWrap>
-                    {rv.product.name}
-                  </Typography>
-                  <Typography variant="caption" sx={{ color: "text.disabled" }}>{formatDate(rv.createdAt)}</Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flex: 1, minWidth: 0, cursor: "pointer" }}
+                  onClick={() => router.push(`/shop/products/${rv.product.id}`)}>
+                  {rv.product.imageUrl ? (
+                    <Box component="img" src={rv.product.imageUrl}
+                      sx={{ width: 44, height: 44, borderRadius: 1.5, objectFit: "cover", flexShrink: 0 }} />
+                  ) : (
+                    <Avatar variant="rounded" sx={{ width: 44, height: 44, bgcolor: "#e0e0e0", flexShrink: 0 }} />
+                  )}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 700, color: "primary.main" }} noWrap>
+                      {rv.product.name}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "text.disabled" }}>{formatDate(rv.createdAt)}</Typography>
+                  </Box>
                 </Box>
+                <Button size="small" variant="outlined" startIcon={<EditOutlinedIcon fontSize="small" />}
+                  onClick={() => setEditTarget({ id: rv.id, productId: rv.product.id, productName: rv.product.name, productImageUrl: rv.product.imageUrl, rating: rv.rating, content: rv.content ?? "", images: rv.reviewImages ?? [] })}
+                  sx={{ flexShrink: 0, fontSize: 12 }}>
+                  수정
+                </Button>
               </Stack>
 
               <Divider />
@@ -113,6 +139,24 @@ export default function MyReviewsPage() {
             </Paper>
           ))}
         </Stack>
+      )}
+
+      {/* 리뷰 수정 드로어 */}
+      {editTarget && (
+        <ReviewDrawer
+          open={!!editTarget}
+          onClose={() => setEditTarget(null)}
+          productId={editTarget.productId}
+          productName={editTarget.productName}
+          productImageUrl={editTarget.productImageUrl}
+          userName={userName}
+          onSuccess={() => { setEditTarget(null); loadReviews(); }}
+          editMode
+          reviewId={editTarget.id}
+          initialRating={editTarget.rating}
+          initialContent={editTarget.content}
+          initialImages={editTarget.images}
+        />
       )}
 
       {/* 이미지 라이트박스 */}
