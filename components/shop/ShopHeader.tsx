@@ -129,7 +129,7 @@ export default function ShopHeader({ userName, factoryName, factoryLocation }: P
         fullWidth
         slotProps={{
           paper: { sx: { borderRadius: 3, overflow: "hidden" } },
-          backdrop: { sx: { bgcolor: "rgba(0,0,0,0.3)" } },
+          backdrop: { sx: { bgcolor: "rgba(0,0,0,0.15)" } },
         }}
       >
         <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pb: 1 }}>

@@ -26,6 +26,7 @@ interface Product {
 interface Comment {
   id: string; name: string; phoneDigits: string; content: string | null;
   isAdminReply: boolean; createdAt: string; userId: string | null; orderId: string | null;
+  pickedUpAt: string | null;
   replies?: Comment[];
 }
 interface Review {
@@ -55,6 +56,7 @@ export default function ProductDetailPage() {
   const [alreadyReviewed, setAlreadyReviewed] = useState(false);
   const [reviewText, setReviewText] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [pickingUpId, setPickingUpId] = useState<string | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [phoneDigits, setPhoneDigits] = useState("");
@@ -193,6 +195,32 @@ export default function ProductDetailPage() {
       }
     } finally {
       setCancellingId(null);
+    }
+  };
+
+  const handlePickup = async (comment: Comment) => {
+    if (!comment.orderId) return;
+    setPickingUpId(comment.id);
+    try {
+      const res = await fetch(`/api/shop/orders/${comment.orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "pickup" }),
+      });
+      if (res.ok) {
+        setComments((prev) =>
+          prev.map((c) => c.id === comment.id ? { ...c, pickedUpAt: new Date().toISOString() } : c)
+        );
+        setCanReview(true);
+        setAlreadyReviewed(false);
+        setTab(1);
+        setSnack({ open: true, msg: "픽업 완료! 리뷰를 작성해보세요", severity: "success" });
+      } else {
+        const d = await res.json();
+        setSnack({ open: true, msg: d.error || "픽업 처리 실패", severity: "error" });
+      }
+    } finally {
+      setPickingUpId(null);
     }
   };
 
@@ -466,7 +494,15 @@ export default function ProductDetailPage() {
           </Typography>
         ) : (
           <Stack divider={<Divider />}>
-            {comments.map((c) => (
+            {[...comments]
+              .sort((a, b) => {
+                const aIsMine = currentUserId ? a.userId === currentUserId : false;
+                const bIsMine = currentUserId ? b.userId === currentUserId : false;
+                if (aIsMine && !bIsMine) return -1;
+                if (!aIsMine && bIsMine) return 1;
+                return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+              })
+              .map((c) => (
               <Box key={c.id}>
                 <Stack direction="row" sx={{ alignItems: "flex-start", px: 2.5, py: 1.5, gap: 1.5 }}>
                   <Avatar sx={{ width: 30, height: 30, bgcolor: "#e3f2fd", flexShrink: 0 }}>
@@ -477,29 +513,48 @@ export default function ProductDetailPage() {
                       const isMyComment =
                         (currentUserId && c.userId === currentUserId && (c.orderId || pendingOrderId)) ||
                         (userPhoneDigits && c.phoneDigits === userPhoneDigits && !!pendingOrderId);
+                      const pickedUp = !!c.pickedUpAt;
                       return (
-                        <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.3 }}>
-                          <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
-                          <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
-                            sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
-                          <Stack direction="row" sx={{ alignItems: "center", gap: 0.5, ml: "auto" }}>
-                            <Typography variant="caption" sx={{ color: "text.disabled" }}>{formatDT(c.createdAt)}</Typography>
-                            {isMyComment && (
-                              <Button
-                                size="small" color="error" variant="outlined"
-                                onClick={() => handleCancelOrder(c)}
-                                disabled={cancellingId === c.id}
-                                sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
-                              >
-                                {cancellingId === c.id ? "취소 중..." : "주문 취소"}
-                              </Button>
+                        <>
+                          <Stack direction="row" sx={{ alignItems: "center", gap: 1, mb: 0.3, flexWrap: "wrap" }}>
+                            <Typography variant="body2" sx={{ fontWeight: 700 }}>{c.name}</Typography>
+                            <Chip label={`***-****-${c.phoneDigits}`} size="small" variant="outlined"
+                              sx={{ height: 18, fontSize: 10, "& .MuiChip-label": { px: 0.75 } }} />
+                            {pickedUp && (
+                              <Chip label="픽업완료" size="small" color="success"
+                                sx={{ height: 18, fontSize: 10, fontWeight: 700, "& .MuiChip-label": { px: 0.75 } }} />
                             )}
+                            <Typography variant="caption" sx={{ color: "text.disabled", ml: "auto" }}>{formatDT(c.createdAt)}</Typography>
                           </Stack>
-                        </Stack>
+                          {isMyComment && (
+                            <Stack direction="row" spacing={0.75} sx={{ mt: 0.75 }}>
+                              {!pickedUp && c.orderId && (
+                                <Button
+                                  size="small" color="success" variant="outlined"
+                                  onClick={() => handlePickup(c)}
+                                  disabled={pickingUpId === c.id}
+                                  sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
+                                >
+                                  {pickingUpId === c.id ? "처리 중..." : "픽업 완료"}
+                                </Button>
+                              )}
+                              {!pickedUp && (
+                                <Button
+                                  size="small" color="error" variant="outlined"
+                                  onClick={() => handleCancelOrder(c)}
+                                  disabled={cancellingId === c.id}
+                                  sx={{ px: 1, py: 0.2, fontSize: 11, lineHeight: 1.5, borderRadius: 1.5, minWidth: 0 }}
+                                >
+                                  {cancellingId === c.id ? "취소 중..." : "주문 취소"}
+                                </Button>
+                              )}
+                            </Stack>
+                          )}
+                        </>
                       );
                     })()}
                     {c.content && (
-                      <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13 }}>{c.content}</Typography>
+                      <Typography variant="body2" sx={{ color: "text.secondary", fontSize: 13, mt: 0.3 }}>{c.content}</Typography>
                     )}
                   </Box>
                 </Stack>
