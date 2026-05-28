@@ -45,16 +45,7 @@ function CustomerSignIn() {
       .catch(() => {});
   }, [factoryCode]);
 
-  if (status === "loading") {
-    return (
-      <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  // 인증됐지만 매장 배정 대기 중(factoryId·factoryCode 둘 다 없음) → 페이지 내용 표시
-  // 인증됐고 이동 예정 → 스피너
+  // 인증됐고 이동 예정 → 스피너 (세션 로딩 중엔 그냥 버튼 표시)
   if (status === "authenticated") {
     const factoryId = (session?.user as any)?.factoryId;
     if (factoryId || factoryCode) {

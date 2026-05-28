@@ -59,21 +59,11 @@ export const authOptions: NextAuthOptions = {
         const ageRange = (kakaoAccount?.age_range as string | undefined) ?? null;
         const birthyear = (kakaoAccount?.birthyear as string | undefined) ?? null;
 
-        let dbUser = await prisma.user.findUnique({ where: { email } });
-        if (!dbUser) {
-          dbUser = await prisma.user.create({
-            data: { email, name, password: null, role: "CUSTOMER", phone, gender, ageRange, birthyear },
-          });
-        } else {
-          const updates: any = {};
-          if (phone && !dbUser.phone) updates.phone = phone;
-          if ((realName?.trim() || kakaoName) && dbUser.name === "고객") updates.name = name;
-          if (gender && !dbUser.gender) updates.gender = gender;
-          if (ageRange && !dbUser.ageRange) updates.ageRange = ageRange;
-          if (birthyear && !dbUser.birthyear) updates.birthyear = birthyear;
-          if (Object.keys(updates).length > 0)
-            dbUser = await prisma.user.update({ where: { id: dbUser.id }, data: updates });
-        }
+        const dbUser = await prisma.user.upsert({
+          where: { email },
+          create: { email, name, password: null, role: "CUSTOMER", phone, gender, ageRange, birthyear },
+          update: {},
+        });
         token.sub = dbUser.id;
         token.role = dbUser.role;
         token.factoryId = dbUser.factoryId ?? null;
