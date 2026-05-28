@@ -64,8 +64,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "유효하지 않은 제품이 포함되어 있습니다" }, { status: 400 });
   }
 
+  // 재고 사전 검증
+  for (const item of items as { productId: string; quantity: number }[]) {
+    const product = products.find((p: any) => p.id === item.productId)!;
+    if (product.stock <= 0) {
+      return NextResponse.json({ error: `${product.name} 품절입니다` }, { status: 400 });
+    }
+    if (product.stock < item.quantity) {
+      return NextResponse.json({ error: `${product.name} 재고가 부족합니다 (남은 재고: ${product.stock}${product.unit})` }, { status: 400 });
+    }
+  }
+
   const orderItems = (items as { productId: string; quantity: number }[]).map((item) => {
-    const product = products.find((p: { id: string; salePrice: number | null; price: number }) => p.id === item.productId)!;
+    const product = products.find((p: any) => p.id === item.productId)!;
     const price = product.salePrice ?? product.price;
     return { productId: item.productId, quantity: item.quantity, price, amount: price * item.quantity };
   });
@@ -74,11 +85,27 @@ export async function POST(req: NextRequest) {
   const orderNo = `ORD-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`;
 
   try {
-    const order = await prisma.order.create({
-      data: { orderNo, userId, factoryId, totalAmount, deliveryAddr: deliveryAddr || null, memo: memo || null, items: { create: orderItems } },
+    const order = await prisma.$transaction(async (tx) => {
+      // 재고 차감 (동시 주문 경합 방지: stock >= quantity 조건으로 원자적 처리)
+      for (const item of orderItems) {
+        const updated = await tx.product.updateMany({
+          where: { id: item.productId, stock: { gte: item.quantity } },
+          data: { stock: { decrement: item.quantity } },
+        });
+        if (updated.count === 0) {
+          const product = products.find((p: any) => p.id === item.productId)!;
+          throw new Error(`${product.name} 재고가 부족합니다`);
+        }
+      }
+      return tx.order.create({
+        data: { orderNo, userId, factoryId, totalAmount, deliveryAddr: deliveryAddr || null, memo: memo || null, items: { create: orderItems } },
+      });
     });
     return NextResponse.json(order, { status: 201 });
-  } catch {
+  } catch (e: any) {
+    if (e.message?.includes("재고가 부족") || e.message?.includes("품절")) {
+      return NextResponse.json({ error: e.message }, { status: 400 });
+    }
     return NextResponse.json({ error: "주문 생성 실패" }, { status: 500 });
   }
 }
