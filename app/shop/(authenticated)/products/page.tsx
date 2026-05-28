@@ -1,6 +1,6 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useShopUser } from "@/components/shop/ShopUserContext";
 import {
   Box, Card, CardMedia, CardContent, CardActions, Typography, Button,
   TextField, InputAdornment, FormControl, Select, MenuItem,
@@ -45,8 +45,7 @@ function pickupDateKey(iso: string | null) {
 }
 
 export default function ShopProductsPage() {
-  const { data: session } = useSession();
-  const factoryId = (session?.user as any)?.factoryId || "";
+  const { factoryId, userName } = useShopUser();
   const router = useRouter();
 
   const [products, setProducts] = useState<Product[]>([]);
@@ -55,7 +54,9 @@ export default function ShopProductsPage() {
   const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
+  const [searchInput, setSearchInput] = useState("");
   const [search, setSearch] = useState("");
+  const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [categoryId, setCategoryId] = useState("");
   const [selectedDate, setSelectedDate] = useState<string>("all");
   const [qtys, setQtys] = useState<Record<string, number>>({});
@@ -76,6 +77,7 @@ export default function ShopProductsPage() {
   }, []);
 
   useEffect(() => {
+    if (userName) setSavedUserName(userName);
     fetch("/api/categories").then((r) => r.json()).then(setCategories).catch(() => {});
     fetch("/api/users/me").then((r) => r.json()).then((u) => {
       if (u?.phone) {
@@ -83,9 +85,8 @@ export default function ShopProductsPage() {
         setPhoneDigits(d);
         setSavedPhoneDigits(d);
       }
-      if (u?.name) setSavedUserName(u.name);
     }).catch(() => {});
-  }, []);
+  }, [userName]);
 
   useEffect(() => {
     if (!factoryId) return;
@@ -280,8 +281,13 @@ export default function ShopProductsPage() {
             {categories.map((c) => <MenuItem key={c.id} value={c.id}>{c.name}</MenuItem>)}
           </Select>
         </FormControl>
-        <TextField size="small" placeholder="제품명 검색" value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+        <TextField size="small" placeholder="제품명 검색" value={searchInput}
+          onChange={(e) => {
+            const val = e.target.value;
+            setSearchInput(val);
+            if (searchTimer.current) clearTimeout(searchTimer.current);
+            searchTimer.current = setTimeout(() => { setSearch(val); setPage(1); }, 300);
+          }}
           slotProps={{ input: { startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> } }}
           sx={{ flex: 1, minWidth: 0, bgcolor: "#fff" }} />
         <ToggleButtonGroup value={view} exclusive onChange={handleViewChange} size="small" sx={{ bgcolor: "#fff", border: "1px solid #e0e0e0", borderRadius: 1, flexShrink: 0 }}>

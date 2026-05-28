@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useShopUser } from "@/components/shop/ShopUserContext";
 import {
   Box, Typography, Paper, Stack, Chip, Collapse, CircularProgress,
   Button, Avatar, Dialog, DialogTitle, DialogContent, DialogActions,
@@ -51,7 +52,7 @@ export default function ShopOrdersPage() {
   const [snack, setSnack] = useState<{ open: boolean; msg: string; severity: "success" | "error" }>({ open: false, msg: "", severity: "success" });
   const [reviewTarget, setReviewTarget] = useState<{ productId: string; productName: string; productImageUrl: string | null } | null>(null);
   const [reviewedProductIds, setReviewedProductIds] = useState<Set<string>>(new Set());
-  const [userName, setUserName] = useState("");
+  const { userName } = useShopUser();
   const router = useRouter();
 
   const loadOrders = () => {
@@ -62,7 +63,6 @@ export default function ShopOrdersPage() {
   };
   useEffect(() => {
     loadOrders();
-    fetch("/api/users/me").then((r) => r.json()).then((u) => { if (u?.name) setUserName(u.name); });
     fetch("/api/shop/orders/reviewed").then((r) => r.json()).then((ids: string[]) => {
       if (Array.isArray(ids)) setReviewedProductIds(new Set(ids));
     });

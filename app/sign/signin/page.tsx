@@ -28,7 +28,7 @@ function CustomerSignIn() {
   useEffect(() => {
     if (status === "authenticated") {
       const factoryId = (session?.user as any)?.factoryId;
-      if (factoryId) router.replace("/shop");
+      if (factoryId) router.replace("/shop/products");
       else if (factoryCode) router.replace(`/shop/setup?f=${factoryCode}`);
       // factoryId도 factoryCode도 없으면 로그인 페이지에 머뭄 (noFactory 안내 표시)
     }
@@ -68,7 +68,7 @@ function CustomerSignIn() {
 
   const handleKakaoLogin = () => {
     setLoading(true);
-    const callbackUrl = factoryCode ? `/shop/setup?f=${factoryCode}` : "/shop";
+    const callbackUrl = factoryCode ? `/shop/setup?f=${factoryCode}` : "/shop/products";
     signIn("kakao", { callbackUrl });
   };
 

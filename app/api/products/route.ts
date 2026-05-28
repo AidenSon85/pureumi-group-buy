@@ -30,7 +30,9 @@ export async function GET(req: NextRequest) {
     }),
     prisma.product.count({ where }),
   ]);
-  return NextResponse.json({ products, total });
+  return NextResponse.json({ products, total }, {
+    headers: { "Cache-Control": "public, s-maxage=10, stale-while-revalidate=30" },
+  });
 }
 
 export async function POST(req: NextRequest) {

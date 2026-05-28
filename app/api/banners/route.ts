@@ -48,7 +48,9 @@ export async function GET(req: NextRequest) {
         },
     orderBy: { sortOrder: "asc" },
   });
-  return NextResponse.json(banners);
+  return NextResponse.json(banners, {
+    headers: { "Cache-Control": "public, s-maxage=30, stale-while-revalidate=60" },
+  });
 }
 
 export async function POST(req: NextRequest) {
