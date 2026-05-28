@@ -11,6 +11,7 @@ import CloseIcon from "@mui/icons-material/Close";
 import { signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import PushSubscribeButton from "./PushSubscribeButton";
 
 interface FactoryLocation {
   address: string | null;
@@ -119,6 +120,9 @@ export default function ShopHeader({ userName, factoryName, factoryLocation }: P
             >
               <ReceiptLongIcon fontSize="small" />
             </IconButton>
+            <Box sx={{ display: { xs: "none", sm: "block" } }}>
+              <PushSubscribeButton />
+            </Box>
             <Stack direction="row" spacing={1} sx={{ alignItems: "center", pl: 1.5, borderLeft: "1px solid #e0e0e0" }}>
               <Avatar sx={{ width: 30, height: 30, bgcolor: "#1a237e", fontSize: 13 }}>
                 {userName[0]}

@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { CartProvider } from "@/components/shop/CartContext";
 import { ShopUserProvider } from "@/components/shop/ShopUserContext";
 import ShopHeader from "@/components/shop/ShopHeader";
+import ServiceWorkerRegister from "@/components/shop/ServiceWorkerRegister";
 import prisma from "@/lib/prisma";
 import { Box, Toolbar } from "@mui/material";
 
@@ -37,6 +38,7 @@ export default async function ShopLayout({ children }: { children: React.ReactNo
   return (
     <ShopUserProvider value={{ factoryId, userId, userName }}>
       <CartProvider>
+        <ServiceWorkerRegister />
         <Box sx={{ minHeight: "100vh", bgcolor: "#f8f9fa" }}>
           <ShopHeader
             userName={userName}

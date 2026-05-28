@@ -58,7 +58,8 @@ model User {
   factoryId   String?
   factory     Factory?  @relation(fields: [factoryId], references: [id])
 
-  orders      Order[]
+  orders            Order[]
+  pushSubscriptions PushSubscription[]
 
   @@index([factoryId])
 }
@@ -205,4 +206,30 @@ model DailyStat {
   factory       Factory  @relation(fields: [factoryId], references: [id])
 
   @@unique([factoryId, date])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userId    String
+  factoryId String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([factoryId])
+}
+
+model NotificationLog {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  url       String?
+  factoryId String?
+  sentCount Int      @default(0)
+  failCount Int      @default(0)
+  createdAt DateTime @default(now())
 }
