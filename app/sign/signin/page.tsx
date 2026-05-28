@@ -1,6 +1,6 @@
 "use client";
 import { Suspense, useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box, Paper, Typography, Button, Stack, CircularProgress, Divider, Alert,
@@ -59,8 +59,8 @@ function CustomerSignIn() {
 
   const handleKakaoLogin = () => {
     setLoading(true);
-    const callbackUrl = encodeURIComponent(factoryCode ? `/shop/setup?f=${factoryCode}` : "/shop/products");
-    window.location.href = `/api/auth/signin/kakao?callbackUrl=${callbackUrl}`;
+    const callbackUrl = factoryCode ? `/shop/setup?f=${factoryCode}` : "/shop/products";
+    signIn("kakao", { callbackUrl });
   };
 
   return (
