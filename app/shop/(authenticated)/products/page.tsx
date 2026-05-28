@@ -325,25 +325,31 @@ export default function ShopProductsPage() {
                 const qty = getQty(p);
                 const max = maxQty(p);
                 const soldOut = p.stock === 0;
+                const isAlways = !p.groupBuyEndAt && !soldOut;
                 return (
-                  <Box key={p.id} sx={{ borderBottom: idx < filtered.length - 1 ? "1px solid #f0f0f0" : "none" }}>
+                  <Box key={p.id} sx={{
+                    borderBottom: idx < filtered.length - 1 ? "1px solid #f0f0f0" : "none",
+                    borderLeft: isAlways ? "3px solid #0288d1" : "none",
+                    bgcolor: isAlways ? "#f8fbff" : "#fff",
+                  }}>
                     <Stack direction="row" spacing={1.5} sx={{ p: 2, alignItems: "flex-start" }}>
-                      <Box onClick={() => router.push(`/shop/products/${p.id}`)}
-                        sx={{ flexShrink: 0, width: 90, height: 90, borderRadius: 1.5, overflow: "hidden", bgcolor: "#f5f5f5", cursor: "pointer", position: "relative" }}>
+                      <Box
+                        onClick={isAlways ? undefined : () => router.push(`/shop/products/${p.id}`)}
+                        sx={{ flexShrink: 0, width: 90, height: 90, borderRadius: 1.5, overflow: "hidden", bgcolor: "#f5f5f5", cursor: isAlways ? "default" : "pointer", position: "relative" }}>
                         {p.imageUrl
                           ? <CardMedia component="img" image={p.imageUrl} alt={p.name} sx={{ width: 90, height: 90, objectFit: "cover", opacity: soldOut ? 0.5 : 1 }} />
                           : <Box sx={{ width: 90, height: 90, display: "flex", alignItems: "center", justifyContent: "center" }}><ImageIcon sx={{ fontSize: 32, color: "#ccc" }} /></Box>}
                         <Stack direction="row" sx={{ position: "absolute", top: 4, left: 4, gap: 0.5, flexWrap: "wrap" }}>
                           {p.salePrice && <Chip label="SALE" size="small" color="error" sx={{ fontWeight: 700, height: 16, fontSize: 10 }} />}
-                          {!p.groupBuyEndAt && !soldOut && <Chip label="상시" size="small" color="info" sx={{ fontWeight: 700, height: 16, fontSize: 10 }} />}
+                          {isAlways && <Chip label="상시" size="small" color="info" sx={{ fontWeight: 700, height: 16, fontSize: 10 }} />}
                         </Stack>
                       </Box>
                       <Box sx={{ flex: 1, minWidth: 0 }}>
                         <Stack direction="row" sx={{ justifyContent: "space-between", alignItems: "flex-start", gap: 1 }}>
                           <Box sx={{ flex: 1, minWidth: 0 }}>
                             {p.category && <Typography sx={{ fontSize: 11, color: "text.secondary", mb: 0.3 }}>{p.category.name}</Typography>}
-                            <Typography sx={{ fontWeight: 700, fontSize: 14, lineHeight: 1.4, color: soldOut ? "text.disabled" : "text.primary", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-                              onClick={() => router.push(`/shop/products/${p.id}`)} style={{ cursor: "pointer" }}>
+                            <Typography sx={{ fontWeight: 700, fontSize: 14, lineHeight: 1.4, color: soldOut ? "text.disabled" : "text.primary", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden", cursor: isAlways ? "default" : "pointer" }}
+                              onClick={isAlways ? undefined : () => router.push(`/shop/products/${p.id}`)}>
                               {p.name}
                             </Typography>
                           </Box>
@@ -371,13 +377,19 @@ export default function ShopProductsPage() {
                         )}
                       </Box>
                     </Stack>
-                    {/* 하단: 상세보기 + 수량 */}
+                    {/* 하단: 상세보기(공동구매) or 상시구매안내 + 수량 */}
                     <Divider />
                     <Stack direction="row" spacing={1} sx={{ px: 2, py: 1.5, alignItems: "center" }}>
-                      <Button variant="outlined" size="small" onClick={() => router.push(`/shop/products/${p.id}`)}
-                        sx={{ flex: 1, borderRadius: 2, textTransform: "none", fontWeight: 600, fontSize: 13, color: "text.primary", borderColor: "#ddd", "&:hover": { borderColor: "#bbb", bgcolor: "#fafafa" } }}>
-                        상세보기
-                      </Button>
+                      {isAlways ? (
+                        <Box sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", bgcolor: "#e3f2fd", borderRadius: 2, py: 0.9, border: "1px solid #90caf9" }}>
+                          <Typography sx={{ fontSize: 12, fontWeight: 700, color: "#0277bd" }}>상시 구매 가능</Typography>
+                        </Box>
+                      ) : (
+                        <Button variant="outlined" size="small" onClick={() => router.push(`/shop/products/${p.id}`)}
+                          sx={{ flex: 1, borderRadius: 2, textTransform: "none", fontWeight: 600, fontSize: 13, color: "text.primary", borderColor: "#ddd", "&:hover": { borderColor: "#bbb", bgcolor: "#fafafa" } }}>
+                          상세보기
+                        </Button>
+                      )}
                       <Stack direction="row" sx={{ alignItems: "center", border: "1px solid #ddd", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}>
                         <IconButton size="small" onClick={() => setQty(p, qty - 1)} disabled={qty <= 0 || soldOut} sx={{ borderRadius: 0, width: 34, height: 34 }}>
                           <RemoveIcon sx={{ fontSize: 14 }} />
@@ -406,16 +418,19 @@ export default function ShopProductsPage() {
                 const max = maxQty(p);
                 const soldOut = p.stock === 0;
                 const inCart = qty > 0;
+                const isAlways = !p.groupBuyEndAt && !soldOut;
                 return (
                   <Box key={p.id} sx={{
-                    border: "1px solid #e0e0e0", borderRadius: 2, overflow: "hidden",
-                    bgcolor: "#fff", display: "flex", flexDirection: "column",
-                    "&:hover": { boxShadow: 2, borderColor: "#bbb" },
+                    border: isAlways ? "1.5px solid #0288d1" : "1px solid #e0e0e0",
+                    borderRadius: 2, overflow: "hidden",
+                    bgcolor: isAlways ? "#f8fbff" : "#fff",
+                    display: "flex", flexDirection: "column",
+                    "&:hover": { boxShadow: 2, borderColor: isAlways ? "#0277bd" : "#bbb" },
                   }}>
                     {/* 이미지 - 4:3 비율 */}
                     <Box
-                      sx={{ position: "relative", cursor: "pointer", aspectRatio: "4/3", overflow: "hidden", bgcolor: "#f5f5f5", flexShrink: 0 }}
-                      onClick={() => router.push(`/shop/products/${p.id}`)}
+                      sx={{ position: "relative", cursor: isAlways ? "default" : "pointer", aspectRatio: "4/3", overflow: "hidden", bgcolor: "#f5f5f5", flexShrink: 0 }}
+                      onClick={isAlways ? undefined : () => router.push(`/shop/products/${p.id}`)}
                     >
                       {p.imageUrl
                         ? <Box component="img" src={p.imageUrl} alt={p.name} sx={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: soldOut ? 0.5 : 1 }} />
@@ -441,8 +456,8 @@ export default function ShopProductsPage() {
                       <Typography sx={{
                         fontWeight: 700, fontSize: { xs: 12, sm: 13 }, lineHeight: 1.4, mb: 0.5,
                         display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-                        cursor: "pointer",
-                      }} onClick={() => router.push(`/shop/products/${p.id}`)}>
+                        cursor: isAlways ? "default" : "pointer",
+                      }} onClick={isAlways ? undefined : () => router.push(`/shop/products/${p.id}`)}>
                         {p.name}
                       </Typography>
 
